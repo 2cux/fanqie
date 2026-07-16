@@ -29,10 +29,241 @@ html {
 }
 
 body {
+  position: relative;
   min-height: 100vh;
   margin: 0;
   color: var(--color-text);
   background: linear-gradient(180deg, #0d1915 0%, var(--color-bg) 38rem);
+  isolation: isolate;
+}
+
+.ambient-background {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+}
+
+.ambient-background::before,
+.ambient-background::after {
+  position: absolute;
+  width: 68vmax;
+  aspect-ratio: 1;
+  content: "";
+  border-radius: 50%;
+  will-change: transform;
+}
+
+.ambient-background::before {
+  top: -38vmax;
+  left: -24vmax;
+  opacity: 0.48;
+  background: radial-gradient(
+    circle,
+    rgba(75, 145, 104, 0.16) 0%,
+    rgba(55, 112, 81, 0.065) 38%,
+    transparent 70%
+  );
+  animation: ambient-light-drift-one 38s ease-in-out infinite alternate;
+}
+
+.ambient-background::after {
+  right: -36vmax;
+  bottom: -42vmax;
+  opacity: 0.34;
+  background: radial-gradient(
+    circle,
+    rgba(88, 154, 116, 0.12) 0%,
+    rgba(48, 99, 73, 0.045) 42%,
+    transparent 70%
+  );
+  animation: ambient-light-drift-two 46s ease-in-out infinite alternate;
+}
+
+.ambient-flow {
+  position: absolute;
+  top: 20%;
+  left: 28%;
+  width: 48vmax;
+  height: 32vmax;
+  opacity: 0.2;
+  background: radial-gradient(
+    ellipse,
+    rgba(155, 205, 172, 0.075) 0%,
+    rgba(99, 158, 120, 0.025) 42%,
+    transparent 72%
+  );
+  transform: rotate(-12deg);
+  animation: ambient-flow-drift 42s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.ambient-particles {
+  position: absolute;
+  inset: 0;
+}
+
+.ambient-particles i {
+  --ambient-size: 3px;
+  --ambient-duration: 38s;
+  --drift-x: 32px;
+  --drift-y: -54px;
+  position: absolute;
+  width: var(--ambient-size);
+  height: var(--ambient-size);
+  opacity: 0.16;
+  background: rgba(186, 225, 199, 0.72);
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(128, 199, 153, 0.36);
+  animation: ambient-particle-drift var(--ambient-duration) ease-in-out infinite
+    alternate;
+  will-change: transform;
+}
+
+.ambient-particles i:nth-child(1) {
+  top: 16%;
+  left: 9%;
+  --ambient-duration: 34s;
+}
+
+.ambient-particles i:nth-child(2) {
+  top: 28%;
+  left: 82%;
+  --ambient-size: 2px;
+  --ambient-duration: 46s;
+  --drift-x: -46px;
+  --drift-y: 32px;
+}
+
+.ambient-particles i:nth-child(3) {
+  top: 47%;
+  left: 18%;
+  --ambient-size: 2px;
+  --ambient-duration: 41s;
+  --drift-x: 52px;
+  --drift-y: -28px;
+}
+
+.ambient-particles i:nth-child(4) {
+  top: 62%;
+  left: 73%;
+  --ambient-duration: 37s;
+  --drift-x: -30px;
+  --drift-y: -58px;
+}
+
+.ambient-particles i:nth-child(5) {
+  top: 78%;
+  left: 12%;
+  --ambient-size: 2px;
+  --ambient-duration: 49s;
+  --drift-x: 40px;
+  --drift-y: 22px;
+}
+
+.ambient-particles i:nth-child(6) {
+  top: 86%;
+  left: 89%;
+  --ambient-size: 4px;
+  --ambient-duration: 44s;
+  --drift-x: -56px;
+  --drift-y: -34px;
+}
+
+.ambient-particles i:nth-child(7) {
+  top: 11%;
+  left: 61%;
+  --ambient-size: 2px;
+  --ambient-duration: 52s;
+  --drift-x: 28px;
+  --drift-y: 42px;
+}
+
+.ambient-particles i:nth-child(8) {
+  top: 69%;
+  left: 42%;
+  --ambient-size: 2px;
+  --ambient-duration: 39s;
+  --drift-x: -25px;
+  --drift-y: 48px;
+}
+
+body[data-focus-state="running"] .ambient-background::before {
+  opacity: 0.66;
+  animation-duration: 24s;
+}
+
+body[data-focus-state="running"] .ambient-background::after {
+  opacity: 0.48;
+  animation-duration: 29s;
+}
+
+body[data-focus-state="running"] .ambient-flow {
+  opacity: 0.3;
+  animation-duration: 27s;
+}
+
+body[data-focus-state="running"] .ambient-particles i {
+  opacity: 0.26;
+  animation-duration: calc(var(--ambient-duration) * 0.7);
+}
+
+body[data-focus-state="paused"] .ambient-background::before {
+  opacity: 0.34;
+  animation-duration: 58s;
+}
+
+body[data-focus-state="paused"] .ambient-background::after {
+  opacity: 0.22;
+  animation-duration: 68s;
+}
+
+body[data-focus-state="paused"] .ambient-flow {
+  opacity: 0.13;
+  animation-duration: 64s;
+}
+
+body[data-focus-state="paused"] .ambient-particles i {
+  opacity: 0.09;
+  animation-duration: calc(var(--ambient-duration) * 1.75);
+}
+
+@keyframes ambient-light-drift-one {
+  from {
+    transform: translate3d(-2%, -1%, 0) scale(0.96);
+  }
+  to {
+    transform: translate3d(13%, 8%, 0) scale(1.08);
+  }
+}
+
+@keyframes ambient-light-drift-two {
+  from {
+    transform: translate3d(3%, 2%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(-12%, -9%, 0) scale(1.1);
+  }
+}
+
+@keyframes ambient-flow-drift {
+  from {
+    transform: translate3d(-8%, 4%, 0) rotate(-12deg) scale(0.94);
+  }
+  to {
+    transform: translate3d(12%, -8%, 0) rotate(-4deg) scale(1.08);
+  }
+}
+
+@keyframes ambient-particle-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(0.82);
+  }
+  to {
+    transform: translate3d(var(--drift-x), var(--drift-y), 0) scale(1.12);
+  }
 }
 
 button {
@@ -45,6 +276,8 @@ button:focus-visible {
 }
 
 .app-shell {
+  position: relative;
+  z-index: 1;
   width: min(calc(100% - 48px), var(--page-width));
   margin: 0 auto;
 }

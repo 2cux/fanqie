@@ -77,6 +77,9 @@
       ) {
         energyCore.dataset.focusState = timer.state;
       }
+      if (document.body.dataset.focusState !== timer.state) {
+        document.body.dataset.focusState = timer.state;
+      }
     }
 
     actionButton.addEventListener("click", () => {
