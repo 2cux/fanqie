@@ -1,9 +1,9 @@
 (function initStorageModule(global) {
   "use strict";
 
-  const APP_DATA_KEY = "focus-core.data.v2";
-  const LEGACY_APP_DATA_KEY = "focus-core.data.v1";
-  const DATA_VERSION = 2;
+  const APP_DATA_KEY = "focus-core.data.v3";
+  const LEGACY_APP_DATA_KEYS = ["focus-core.data.v2", "focus-core.data.v1"];
+  const DATA_VERSION = 3;
   const DAILY_RECORD_LIMIT = 365;
   const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
 
@@ -52,6 +52,7 @@
       userState: {
         currentStreak: 0,
         lastFocusDate: null,
+        lastEnergyCheckDate: null,
       },
     };
   }
@@ -137,6 +138,11 @@
       parseDateKey(userState.lastFocusDate) !== null
         ? userState.lastFocusDate
         : null;
+    const lastEnergyCheckDate =
+      typeof userState.lastEnergyCheckDate === "string" &&
+      parseDateKey(userState.lastEnergyCheckDate) !== null
+        ? userState.lastEnergyCheckDate
+        : null;
 
     return {
       version: DATA_VERSION,
@@ -144,7 +150,7 @@
         totalFocusMinutes: toNonNegativeNumber(
           permanentData.totalFocusMinutes,
         ),
-        energy: toNonNegativeNumber(permanentData.energy),
+        energy: Math.floor(toNonNegativeNumber(permanentData.energy)),
       },
       dailyRecords: normalizeDailyRecords(source.dailyRecords),
       userState: {
@@ -152,6 +158,7 @@
           toNonNegativeNumber(userState.currentStreak),
         ),
         lastFocusDate,
+        lastEnergyCheckDate,
       },
     };
   }
@@ -166,7 +173,11 @@
     const storedData = readStorage(APP_DATA_KEY, null);
     if (storedData !== null) return normalizeAppData(storedData);
 
-    const legacyData = readStorage(LEGACY_APP_DATA_KEY, null);
+    let legacyData = null;
+    for (const legacyKey of LEGACY_APP_DATA_KEYS) {
+      legacyData = readStorage(legacyKey, null);
+      if (legacyData !== null) break;
+    }
     if (legacyData === null) return createDefaultData();
 
     const migratedData = normalizeAppData(legacyData);
@@ -210,7 +221,9 @@
   /** 清除三类应用数据并恢复默认值，不影响独立的计时器运行状态。 */
   function clearData() {
     const clearedCurrentData = removeStorage(APP_DATA_KEY);
-    const clearedLegacyData = removeStorage(LEGACY_APP_DATA_KEY);
+    const clearedLegacyData = LEGACY_APP_DATA_KEYS.map(removeStorage).every(
+      Boolean,
+    );
     return clearedCurrentData && clearedLegacyData;
   }
 
