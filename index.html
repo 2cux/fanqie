@@ -13,9 +13,12 @@
   <body>
     <div class="app-shell">
       <header class="app-header">
-        <div>
-          <p class="eyebrow">FOCUS CORE</p>
-          <h1 class="app-title">专注核心</h1>
+        <div class="brand">
+          <span class="brand__mark" aria-hidden="true"></span>
+          <div>
+            <p class="eyebrow">FOCUS SANCTUARY</p>
+            <h1 class="app-title">专注栖所</h1>
+          </div>
         </div>
 
         <button class="icon-button" type="button" aria-label="打开设置" title="设置">
@@ -24,64 +27,77 @@
       </header>
 
       <main class="app-main">
-        <section class="focus-panel" aria-labelledby="timer-title">
-          <div class="energy-core" aria-label="能量核心球占位区域">
-            <div class="energy-core__inner">
-              <span>能量核心</span>
-              <small>CORE</small>
-            </div>
-          </div>
+        <section class="focus-stage" aria-labelledby="timer-title">
+          <h2 id="data-title" class="visually-hidden">专注概览</h2>
 
-          <div class="timer">
-            <h2 id="timer-title" class="visually-hidden">专注计时器</h2>
-            <p class="timer__label" data-timer-status>未开始</p>
-            <time
-              class="timer__display"
-              data-timer-display
-              datetime="PT0S"
-              aria-live="off"
-            >00:00:00</time>
-            <button class="primary-button" data-timer-action type="button">
-              开始专注
-            </button>
-          </div>
-        </section>
-
-        <section class="data-section" aria-labelledby="data-title">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">OVERVIEW</p>
-              <h2 id="data-title">专注概览</h2>
-            </div>
-            <p>你的每一次投入，都会在这里留下痕迹。</p>
-          </div>
-
-          <div class="stats-grid">
+          <aside class="stats-stack stats-stack--left" aria-labelledby="data-title">
             <article class="stat-card">
+              <span class="stat-card__index">01</span>
               <p>今日专注</p>
               <strong>0<small> 分钟</small></strong>
+              <span class="stat-card__line" aria-hidden="true"></span>
             </article>
             <article class="stat-card">
-              <p>本周专注</p>
-              <strong>0<small> 分钟</small></strong>
-            </article>
-            <article class="stat-card">
+              <span class="stat-card__index">03</span>
               <p>累计专注</p>
               <strong>0<small> 小时</small></strong>
+              <span class="stat-card__line" aria-hidden="true"></span>
+            </article>
+          </aside>
+
+          <div class="focus-center">
+            <div class="core-caption">
+              <span>CALM ENERGY</span>
+              <i aria-hidden="true"></i>
+              <span>INNER FOCUS</span>
+            </div>
+
+            <div class="energy-core" aria-label="能量核心球">
+              <div class="energy-core__inner">
+                <span>ENERGY</span>
+                <strong>0</strong>
+                <small>能量核心</small>
+              </div>
+            </div>
+
+            <div class="timer">
+              <h2 id="timer-title" class="visually-hidden">专注计时器</h2>
+              <p class="timer__label" data-timer-status>未开始</p>
+              <time
+                class="timer__display"
+                data-timer-display
+                datetime="PT0S"
+                aria-live="off"
+              >00:00:00</time>
+              <button class="primary-button" data-timer-action type="button">
+                <span>开始专注</span>
+              </button>
+            </div>
+          </div>
+
+          <aside class="stats-stack stats-stack--right" aria-labelledby="data-title">
+            <article class="stat-card">
+              <span class="stat-card__index">02</span>
+              <p>本周专注</p>
+              <strong>0<small> 分钟</small></strong>
+              <span class="stat-card__line" aria-hidden="true"></span>
             </article>
             <article class="stat-card">
+              <span class="stat-card__index">04</span>
               <p>连续专注天数</p>
               <strong>0<small> 天</small></strong>
+              <span class="stat-card__line" aria-hidden="true"></span>
             </article>
-          </div>
+          </aside>
         </section>
 
         <section class="heatmap-section" aria-labelledby="heatmap-title">
           <div class="section-heading section-heading--compact">
             <div>
-              <p class="eyebrow">ACTIVITY</p>
-              <h2 id="heatmap-title">专注热力图</h2>
+              <p class="eyebrow">A YEAR IN FOCUS</p>
+              <h2 id="heatmap-title">这一年的专注痕迹</h2>
             </div>
+            <p>不追赶时间，只记录每一次安静抵达。</p>
           </div>
 
           <div class="heatmap" data-focus-heatmap aria-label="365天专注热力图"></div>
@@ -89,7 +105,9 @@
       </main>
 
       <footer class="app-footer">
-        <p>让专注成为一种稳定的能量。</p>
+        <span aria-hidden="true"></span>
+        <p>向内生长，让专注成为稳定的能量。</p>
+        <span aria-hidden="true"></span>
       </footer>
     </div>
 
