@@ -1,6 +1,8 @@
 (function initSettingsModule(global) {
   "use strict";
 
+  let initialized = false;
+
   function buildExportData(data) {
     return {
       totalFocusMinutes: data.permanentData.totalFocusMinutes,
@@ -16,6 +18,7 @@
   }
 
   function initSettingsPanel() {
+    if (initialized) return;
     const openButton = document.querySelector("[data-settings-open]");
     const settingsDialog = document.querySelector("#settings-dialog");
     const confirmDialog = document.querySelector("#clear-confirm-dialog");
@@ -38,6 +41,8 @@
     ) {
       return;
     }
+
+    initialized = true;
 
     const openSettings = () => {
       if (feedback) feedback.textContent = "";

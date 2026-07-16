@@ -1,7 +1,7 @@
 (function initStatisticsModule(global) {
   "use strict";
 
-  const { loadData, saveData } = global.FocusCoreStorage;
+  const { loadData, updateData } = global.FocusCoreStorage;
   const DAYS_IN_WEEK = 7;
 
   function formatDateKey(date) {
@@ -39,7 +39,13 @@
   }
 
   function getDailyMinutes(records, date) {
-    const minutes = records[formatDateKey(date)];
+    const record = records[formatDateKey(date)];
+    const minutes =
+      record === true
+        ? 1
+        : record !== null && typeof record === "object"
+          ? record.focusMinutes
+          : record;
     return Number.isFinite(minutes) && minutes > 0 ? minutes : 0;
   }
 
@@ -63,7 +69,10 @@
 
   function findLastFocusDate(records) {
     const focusedDates = Object.entries(records)
-      .filter(([, minutes]) => Number.isFinite(minutes) && minutes > 0)
+      .filter(([dateKey]) => {
+        const date = parseDateInput(dateKey);
+        return date !== null && getDailyMinutes(records, date) > 0;
+      })
       .map(([dateKey]) => dateKey)
       .sort();
 
@@ -119,20 +128,38 @@
 
     const data = loadData();
     const dateKey = formatDateKey(normalizedDate);
-    const currentDailyMinutes = Number.isFinite(data.dailyRecords[dateKey])
-      ? data.dailyRecords[dateKey]
-      : 0;
+    const currentDailyMinutes = getDailyMinutes(
+      data.dailyRecords,
+      normalizedDate,
+    );
     const roundedMinutes = Math.round(minutes * 1_000_000) / 1_000_000;
 
-    data.dailyRecords[dateKey] = currentDailyMinutes + roundedMinutes;
-    data.permanentData.totalFocusMinutes += roundedMinutes;
-    data.userState.currentStreak = calculateCurrentStreak(
-      data.dailyRecords,
-      new Date(),
-    );
-    data.userState.lastFocusDate = findLastFocusDate(data.dailyRecords);
+    const dailyRecords = {
+      ...data.dailyRecords,
+      [dateKey]: {
+        focusMinutes: currentDailyMinutes + roundedMinutes,
+      },
+    };
+    const updated = updateData({
+      permanentData: {
+        totalFocusMinutes:
+          data.permanentData.totalFocusMinutes + roundedMinutes,
+      },
+      dailyRecords,
+      userState: {
+        currentStreak: calculateCurrentStreak(dailyRecords, new Date()),
+        lastFocusDate: findLastFocusDate(dailyRecords),
+      },
+    });
 
-    return saveData(data);
+    if (updated && typeof global.CustomEvent === "function") {
+      global.dispatchEvent(
+        new CustomEvent("focuscore:statisticschange", {
+          detail: buildStatistics(loadData(), new Date()),
+        }),
+      );
+    }
+    return updated;
   }
 
   global.FocusCoreStatistics = Object.freeze({

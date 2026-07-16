@@ -3,17 +3,18 @@
 
   /** 页面协调层：连接计时、统计、Energy 与视图，不承载数据规则。 */
   const { FocusTimer, TIMER_STATES } = global.FocusCoreTimer;
+  const { formatDuration } = global.FocusCoreFormatters;
 
   const STATUS_TEXT = Object.freeze({
-    [TIMER_STATES.IDLE]: "未开始",
-    [TIMER_STATES.RUNNING]: "正在专注",
-    [TIMER_STATES.PAUSED]: "已暂停",
+    [TIMER_STATES.IDLE]: "静候开始",
+    [TIMER_STATES.RUNNING]: "沉浸此刻",
+    [TIMER_STATES.PAUSED]: "稍作停留",
   });
 
   const ACTION_TEXT = Object.freeze({
-    [TIMER_STATES.IDLE]: "开始专注",
-    [TIMER_STATES.RUNNING]: "暂停",
-    [TIMER_STATES.PAUSED]: "继续专注",
+    [TIMER_STATES.IDLE]: "进入专注",
+    [TIMER_STATES.RUNNING]: "暂歇",
+    [TIMER_STATES.PAUSED]: "回到专注",
   });
 
   function formatElapsedTime(elapsedSeconds) {
@@ -34,6 +35,9 @@
     const heatmapContainer = document.querySelector("[data-focus-heatmap]");
     const energyCore = document.querySelector("[data-energy-core]");
     const energyValue = document.querySelector("[data-energy-value]");
+    const energyParticles = energyCore
+      ? Array.from(energyCore.querySelectorAll(".core-particles i"))
+      : [];
     const todayStat = document.querySelector("[data-stat-today]");
     const weekStat = document.querySelector("[data-stat-week]");
     const totalStat = document.querySelector("[data-stat-total]");
@@ -51,9 +55,6 @@
     let noticeTimeoutId = null;
     let dailyMaintenanceId = null;
     let currentDateKey = getLocalDateKey();
-
-    const formatMetric = (value) =>
-      value.toLocaleString("zh-CN", { maximumFractionDigits: 1 });
 
     function getLocalDateKey(date = new Date()) {
       const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -73,18 +74,18 @@
       }, 3200);
     }
 
-    function syncStatistics() {
-      if (!global.FocusCoreStatistics) return;
-
-      const statistics = global.FocusCoreStatistics.getStatistics();
+    function syncStatistics(
+      statistics = global.FocusCoreStatistics?.getStatistics(),
+    ) {
+      if (!statistics) return;
       if (todayStat) {
-        todayStat.textContent = formatMetric(statistics.todayFocusMinutes);
+        todayStat.textContent = formatDuration(statistics.todayFocusMinutes);
       }
       if (weekStat) {
-        weekStat.textContent = formatMetric(statistics.weekFocusMinutes);
+        weekStat.textContent = formatDuration(statistics.weekFocusMinutes);
       }
       if (totalStat) {
-        totalStat.textContent = formatMetric(statistics.totalFocusMinutes);
+        totalStat.textContent = formatDuration(statistics.totalFocusMinutes);
       }
       if (streakStat) {
         streakStat.textContent = statistics.currentStreak.toLocaleString("zh-CN");
@@ -95,17 +96,21 @@
       if (!energyCore || !energyValue || !global.FocusCoreEnergy) return;
 
       const energy = Math.max(0, global.FocusCoreEnergy.getEnergy());
-      // 对数映射让低能量有变化，高能量又不会产生过强光晕。
-      const glowStrength = Math.min(
-        1,
-        Math.log1p(energy) / Math.log(10_001),
-      );
+      const visuals = global.FocusCoreEnergyVisual?.mapEnergyToVisuals(
+        energy,
+        energyParticles.length,
+      ) ?? { intensity: 0, range: 0, flow: 0, particlePresence: [] };
 
       energyValue.textContent = energy.toLocaleString("zh-CN");
-      energyCore.style.setProperty(
-        "--energy-strength",
-        glowStrength.toFixed(3),
-      );
+      energyCore.style.setProperty("--energy-strength", visuals.intensity.toFixed(4));
+      energyCore.style.setProperty("--energy-range", visuals.range.toFixed(4));
+      energyCore.style.setProperty("--energy-flow", visuals.flow.toFixed(4));
+      energyParticles.forEach((particle, index) => {
+        particle.style.setProperty(
+          "--particle-presence",
+          (visuals.particlePresence[index] ?? 0).toFixed(4),
+        );
+      });
       energyCore.setAttribute("aria-label", `能量核心，当前能量 ${energy}`);
     }
 
@@ -118,36 +123,41 @@
       global.FocusCoreSettings.initSettingsPanel();
     }
 
-    function creditCompletedMinutes() {
+    function persistState() {
+      const saved = global.FocusCoreStorage.persist();
+      if (!saved) {
+        showNotice("专注数据保存失败，请检查浏览器存储权限。", "error");
+      }
+      return saved;
+    }
+
+    function creditCompletedMinutes(now = Date.now(), shouldPersist = true) {
       if (!global.FocusCoreStatistics || !global.FocusCoreEnergy) return;
 
-      const uncreditedMinutes = timer.getUncreditedMinutes();
-      if (uncreditedMinutes <= 0) return;
+      const uncreditedMinutes = timer.getUncreditedMinutes(now);
+      if (uncreditedMinutes <= 0) return false;
 
-      const previousTodayMinutes =
-        global.FocusCoreStatistics.getStatistics().todayFocusMinutes;
-      const statisticsSaved = global.FocusCoreStatistics.recordFocusMinutes(
+      const statisticsUpdated = global.FocusCoreStatistics.recordFocusMinutes(
         uncreditedMinutes,
       );
 
-      if (!statisticsSaved) {
-        showNotice("专注数据保存失败，请检查浏览器存储权限。", "error");
-        return;
+      if (!statisticsUpdated) {
+        showNotice("专注统计更新失败。", "error");
+        return false;
       }
 
-      // 先标记统计结算，避免界面刷新时重复累计同一分钟。
-      if (!timer.markMinutesCredited(uncreditedMinutes)) {
-        showNotice("计时进度保存失败，请检查浏览器存储权限。", "error");
-      }
       const energyBefore = global.FocusCoreEnergy.getEnergy();
       const energyAfter = global.FocusCoreEnergy.addEnergy(uncreditedMinutes);
       if (energyAfter < energyBefore + uncreditedMinutes) {
-        showNotice("Energy 保存失败，请检查浏览器存储权限。", "error");
+        showNotice("Energy 更新失败。", "error");
+        return false;
       }
 
-      syncStatistics();
-      // 热力图每天只需在第一分钟完成时重绘一次。
-      if (previousTodayMinutes <= 0) heatmap?.render();
+      timer.markMinutesCredited(uncreditedMinutes, now);
+      if (shouldPersist) persistState();
+
+      heatmap?.render();
+      return true;
     }
 
     function render() {
@@ -189,6 +199,7 @@
 
       currentDateKey = nextDateKey;
       global.FocusCoreEnergy?.checkDecay();
+      persistState();
       syncEnergyCore();
       syncStatistics();
       heatmap?.render();
@@ -219,7 +230,7 @@
 
       timerUpdateId = window.setTimeout(() => {
         timerUpdateId = null;
-        creditCompletedMinutes();
+        creditCompletedMinutes(Date.now());
         render();
         scheduleTimerUpdate();
       }, nextSecondDelay);
@@ -228,13 +239,17 @@
     actionButton.addEventListener("click", () => {
       if (timer.state === TIMER_STATES.IDLE) {
         timer.start();
+        persistState();
       } else if (timer.state === TIMER_STATES.RUNNING) {
-        timer.pause();
+        const now = Date.now();
+        timer.pause(now);
+        creditCompletedMinutes(now, false);
+        persistState();
       } else {
         timer.resume();
+        persistState();
       }
 
-      creditCompletedMinutes();
       render();
       scheduleTimerUpdate();
     });
@@ -243,13 +258,30 @@
       document.body.dataset.pageVisible = String(!document.hidden);
       if (!document.hidden) {
         refreshForNewDay();
-        creditCompletedMinutes();
+        creditCompletedMinutes(Date.now());
         syncEnergyCore();
         render();
         scheduleTimerUpdate();
       } else {
         stopTimerUpdates();
       }
+    });
+    const flushBeforeClose = () => {
+      stopTimerUpdates();
+      window.clearTimeout(dailyMaintenanceId);
+      dailyMaintenanceId = null;
+      creditCompletedMinutes(Date.now(), false);
+      global.FocusCoreStorage.persist();
+    };
+    global.addEventListener("pagehide", flushBeforeClose);
+    global.addEventListener("pageshow", () => {
+      refreshForNewDay();
+      render();
+      scheduleTimerUpdate();
+      scheduleDailyMaintenance();
+    });
+    global.addEventListener("focuscore:statisticschange", (event) => {
+      syncStatistics(event.detail);
     });
     global.addEventListener("focuscore:energychange", syncEnergyCore);
     global.addEventListener("focuscore:datacleared", () => {
@@ -261,7 +293,8 @@
 
     document.body.dataset.pageVisible = String(!document.hidden);
     global.FocusCoreEnergy?.checkDecay();
-    creditCompletedMinutes();
+    creditCompletedMinutes(Date.now(), false);
+    persistState();
     syncEnergyCore();
     syncStatistics();
     render();

@@ -1,7 +1,7 @@
 (function initEnergyModule(global) {
   "use strict";
 
-  const { loadData, saveData } = global.FocusCoreStorage;
+  const { loadData, updateData } = global.FocusCoreStorage;
   const MAX_CATCH_UP_DAYS = 365;
 
   function formatDateKey(date) {
@@ -39,7 +39,13 @@
   }
 
   function getFocusMinutes(records, date) {
-    const minutes = records[formatDateKey(date)];
+    const record = records[formatDateKey(date)];
+    const minutes =
+      record === true
+        ? 1
+        : record !== null && typeof record === "object"
+          ? record.focusMinutes
+          : record;
     return Number.isFinite(minutes) && minutes > 0 ? minutes : 0;
   }
 
@@ -72,8 +78,9 @@
     if (increment < 1) return currentEnergy;
 
     const nextEnergy = currentEnergy + increment;
-    data.permanentData.energy = nextEnergy;
-    if (!saveData(data)) return currentEnergy;
+    if (!updateData({ permanentData: { energy: nextEnergy } })) {
+      return currentEnergy;
+    }
 
     emitEnergyChange(nextEnergy);
     return nextEnergy;
@@ -115,9 +122,14 @@
       cursor = shiftDate(cursor, 1);
     }
 
-    data.permanentData.energy = nextEnergy;
-    data.userState.lastEnergyCheckDate = formatDateKey(today);
-    if (!saveData(data)) return originalEnergy;
+    if (
+      !updateData({
+        permanentData: { energy: nextEnergy },
+        userState: { lastEnergyCheckDate: formatDateKey(today) },
+      })
+    ) {
+      return originalEnergy;
+    }
 
     if (nextEnergy !== originalEnergy) emitEnergyChange(nextEnergy);
     return nextEnergy;

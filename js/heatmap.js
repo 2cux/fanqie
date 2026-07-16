@@ -3,6 +3,7 @@
 
   const DAYS_TO_DISPLAY = 365;
   const DAYS_PER_WEEK = 7;
+  const { formatDuration } = global.FocusCoreFormatters;
   const MONTH_LABELS = [
     "1月",
     "2月",
@@ -16,6 +17,13 @@
     "10月",
     "11月",
     "12月",
+  ];
+  const ENERGY_LEVELS = [
+    { level: 0, label: "0", description: "0min" },
+    { level: 1, label: "1–30", description: "低能量，1min–30min" },
+    { level: 2, label: "31–60", description: "中等能量，31min–1h 00min" },
+    { level: 3, label: "61–179", description: "高能量，1h 01min–2h 59min" },
+    { level: 4, label: "≥180", description: "强能量，3h 00min 以上" },
   ];
 
   function formatDateKey(date) {
@@ -37,15 +45,22 @@
     return new Date(value.getFullYear(), value.getMonth(), value.getDate());
   }
 
-  function hasFocused(recordValue) {
-    if (recordValue === true) return true;
-    if (Number.isFinite(recordValue)) return recordValue > 0;
-    return (
-      recordValue !== null &&
-      typeof recordValue === "object" &&
-      Number.isFinite(recordValue.focusMinutes) &&
-      recordValue.focusMinutes > 0
-    );
+  function getFocusMinutes(record) {
+    const value =
+      record === true
+        ? 1
+        : record !== null && typeof record === "object"
+        ? record.focusMinutes
+        : record;
+    return Number.isFinite(value) && value > 0 ? value : 0;
+  }
+
+  function getEnergyLevel(minutes) {
+    if (minutes <= 0) return 0;
+    if (minutes <= 30) return 1;
+    if (minutes <= 60) return 2;
+    if (minutes < 180) return 3;
+    return 4;
   }
 
   class FocusHeatmap {
@@ -60,6 +75,8 @@
         (() => global.FocusCoreStorage.loadData().dailyRecords);
       this.referenceDateProvider =
         options.referenceDateProvider ?? (() => new Date());
+      this.layoutKey = null;
+      this.cells = new Map();
     }
 
     render(records = this.dataProvider()) {
@@ -73,6 +90,34 @@
       const weekCount = Math.ceil(
         (leadingSpacers + DAYS_TO_DISPLAY) / DAYS_PER_WEEK,
       );
+      const layoutKey = `${formatDateKey(firstDate)}:${leadingSpacers}:${weekCount}`;
+
+      // The structure changes only when the displayed date range changes.
+      // During a session, update cells in place instead of rebuilding the DOM
+      // and binding another set of pointer listeners every minute.
+      if (this.layoutKey === layoutKey && this.cells.size === DAYS_TO_DISPLAY) {
+        for (let index = 0; index < DAYS_TO_DISPLAY; index += 1) {
+          const dateKey = formatDateKey(shiftDate(firstDate, index));
+          const cell = this.cells.get(dateKey);
+          if (!cell) break;
+
+          const minutes = getFocusMinutes(safeRecords[dateKey]);
+          const level = getEnergyLevel(minutes);
+          const duration = formatDuration(minutes);
+          const nextClassName = `heatmap__cell heatmap__cell--level-${level}`;
+          if (cell.className !== nextClassName) cell.className = nextClassName;
+          if (cell.dataset.duration !== duration) {
+            cell.dataset.duration = duration;
+            cell.setAttribute(
+              "aria-label",
+              `${dateKey}，专注 ${duration}`,
+            );
+          }
+        }
+        return this;
+      }
+
+      this.cells.clear();
 
       const root = document.createElement("div");
       const scroller = document.createElement("div");
@@ -96,7 +141,7 @@
       tooltip.hidden = true;
       tooltip.setAttribute("role", "tooltip");
       grid.setAttribute("role", "grid");
-      grid.setAttribute("aria-label", "最近365天专注记录");
+      grid.setAttribute("aria-label", "最近365天每日专注时长热力图");
       months.style.setProperty("--heatmap-weeks", weekCount);
 
       weekdays.innerHTML =
@@ -114,19 +159,20 @@
       for (let index = 0; index < DAYS_TO_DISPLAY; index += 1) {
         const date = shiftDate(firstDate, index);
         const dateKey = formatDateKey(date);
-        const focused = hasFocused(safeRecords[dateKey]);
+        const minutes = getFocusMinutes(safeRecords[dateKey]);
+        const level = getEnergyLevel(minutes);
+        const duration = formatDuration(minutes);
         const cell = document.createElement("span");
 
-        cell.className = `heatmap__cell${
-          focused ? " heatmap__cell--focused" : ""
-        }`;
+        cell.className = `heatmap__cell heatmap__cell--level-${level}`;
         cell.dataset.date = dateKey;
-        cell.dataset.status = focused ? "专注过" : "未专注";
+        cell.dataset.duration = duration;
         cell.setAttribute("role", "gridcell");
         cell.setAttribute(
           "aria-label",
-          `${dateKey}，${focused ? "专注过" : "未专注"}`,
+          `${dateKey}，专注 ${duration}`,
         );
+        this.cells.set(dateKey, cell);
         grid.append(cell);
 
         if (date.getMonth() !== previousMonth) {
@@ -140,10 +186,20 @@
         }
       }
 
-      footer.innerHTML =
-        '<span>无专注</span><span class="heatmap__legend-cell"></span>' +
-        '<span class="heatmap__legend-cell heatmap__legend-cell--focused"></span>' +
-        "<span>有专注</span>";
+      const legendTitle = document.createElement("span");
+      legendTitle.className = "heatmap__legend-title";
+      legendTitle.textContent = "专注时长";
+      footer.append(legendTitle);
+      ENERGY_LEVELS.forEach(({ level, label, description }) => {
+        const item = document.createElement("span");
+        const swatch = document.createElement("span");
+        item.className = "heatmap__legend-item";
+        item.title = description;
+        swatch.className = `heatmap__legend-cell heatmap__cell--level-${level}`;
+        swatch.setAttribute("aria-hidden", "true");
+        item.append(swatch, label);
+        footer.append(item);
+      });
 
       let activeCell = null;
       let containerRect = null;
@@ -163,7 +219,13 @@
       const showTooltip = (cell, clientX, clientY) => {
         if (activeCell !== cell) {
           activeCell = cell;
-          tooltip.innerHTML = `日期：${cell.dataset.date}<br>状态：${cell.dataset.status}`;
+          tooltip.replaceChildren();
+
+          const dateRow = document.createElement("div");
+          const minutesRow = document.createElement("div");
+          dateRow.textContent = `日期：${cell.dataset.date}`;
+          minutesRow.textContent = `专注：${cell.dataset.duration}`;
+          tooltip.append(dateRow, minutesRow);
           tooltip.hidden = false;
           containerRect = this.container.getBoundingClientRect();
           tooltipHalfWidth = tooltip.offsetWidth / 2;
@@ -180,12 +242,10 @@
         const cell = event.target.closest("[data-date]");
         if (cell) showTooltip(cell, event.clientX, event.clientY);
       });
-      grid.addEventListener("pointerout", (event) => {
-        if (!event.relatedTarget?.closest?.("[data-date]")) {
-          tooltip.hidden = true;
-          activeCell = null;
-          containerRect = null;
-        }
+      grid.addEventListener("pointerleave", () => {
+        tooltip.hidden = true;
+        activeCell = null;
+        containerRect = null;
       });
 
       body.append(weekdays, grid);
@@ -193,11 +253,14 @@
       scroller.append(content);
       root.append(scroller, footer, tooltip);
       this.container.replaceChildren(root);
+      this.layoutKey = layoutKey;
       return this;
     }
 
     destroy() {
       this.container.replaceChildren();
+      this.cells.clear();
+      this.layoutKey = null;
     }
   }
 

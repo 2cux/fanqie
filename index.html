@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0b1512" />
+    <meta name="theme-color" content="#0d1411" />
     <meta
       name="description"
-      content="一个在浏览器本地运行的轻量化个人专注计时器。"
+      content="一处安静收拢心神与专注能量的个人空间。"
     />
     <title>专注栖所</title>
     <link rel="stylesheet" href="./css/style.css" />
@@ -24,8 +24,8 @@
         <div class="brand">
           <span class="brand__mark" aria-hidden="true"></span>
           <div>
-            <p class="eyebrow">FOCUS SANCTUARY</p>
-            <h1 class="app-title">专注栖所</h1>
+            <p class="eyebrow">A QUIET PLACE</p>
+            <h1 class="app-title">静心一隅</h1>
           </div>
         </div>
 
@@ -38,7 +38,7 @@
           aria-expanded="false"
           title="设置"
         >
-          <span aria-hidden="true">⚙</span>
+          <span aria-hidden="true">◌</span>
         </button>
       </header>
 
@@ -50,22 +50,22 @@
             <article class="stat-card">
               <span class="stat-card__index">01</span>
               <p>今日专注</p>
-              <strong><span data-stat-today>0</span><small> 分钟</small></strong>
+              <strong><span data-stat-today>0min</span></strong>
               <span class="stat-card__line" aria-hidden="true"></span>
             </article>
             <article class="stat-card">
               <span class="stat-card__index">03</span>
               <p>累计专注</p>
-              <strong><span data-stat-total>0</span><small> 分钟</small></strong>
+              <strong><span data-stat-total>0min</span></strong>
               <span class="stat-card__line" aria-hidden="true"></span>
             </article>
           </aside>
 
           <div class="focus-center">
             <div class="core-caption">
-              <span>CALM ENERGY</span>
+              <span>收拢微光</span>
               <i aria-hidden="true"></i>
-              <span>INNER FOCUS</span>
+              <span>安住此刻</span>
             </div>
 
             <div
@@ -74,7 +74,14 @@
               data-focus-state="idle"
               aria-label="能量核心，当前能量 0"
             >
+              <div class="core-aura" aria-hidden="true">
+                <i></i><i></i><i></i>
+              </div>
+              <div class="core-flow" aria-hidden="true">
+                <i></i><i></i><i></i>
+              </div>
               <div class="core-particles" aria-hidden="true">
+                <i></i><i></i><i></i><i></i><i></i><i></i>
                 <i></i><i></i><i></i><i></i><i></i><i></i>
               </div>
               <div class="energy-core__inner">
@@ -91,7 +98,7 @@
                 data-timer-status
                 role="status"
                 aria-live="polite"
-              >未开始</p>
+              >静候开始</p>
               <time
                 class="timer__display"
                 data-timer-display
@@ -99,7 +106,7 @@
                 aria-live="off"
               >00:00:00</time>
               <button class="primary-button" data-timer-action type="button">
-                <span>开始专注</span>
+                <span>进入专注</span>
               </button>
             </div>
           </div>
@@ -108,7 +115,7 @@
             <article class="stat-card">
               <span class="stat-card__index">02</span>
               <p>本周专注</p>
-              <strong><span data-stat-week>0</span><small> 分钟</small></strong>
+              <strong><span data-stat-week>0min</span></strong>
               <span class="stat-card__line" aria-hidden="true"></span>
             </article>
             <article class="stat-card">
@@ -123,10 +130,9 @@
         <section class="heatmap-section" aria-labelledby="heatmap-title">
           <div class="section-heading section-heading--compact">
             <div>
-              <p class="eyebrow">A YEAR IN FOCUS</p>
-              <h2 id="heatmap-title">这一年的专注痕迹</h2>
+              <p class="eyebrow">TRACES OF LIGHT</p>
+              <h2 id="heatmap-title">专注留下的微光</h2>
             </div>
-            <p>不追赶时间，只记录每一次安静抵达。</p>
           </div>
 
           <div class="heatmap" data-focus-heatmap aria-label="365天专注热力图"></div>
@@ -135,7 +141,7 @@
 
       <footer class="app-footer">
         <span aria-hidden="true"></span>
-        <p>向内生长，让专注成为稳定的能量。</p>
+        <p>慢下来，回到此刻。</p>
         <span aria-hidden="true"></span>
       </footer>
     </div>
@@ -203,9 +209,11 @@
     </dialog>
 
     <script defer src="./js/storage.js"></script>
+    <script defer src="./js/formatters.js"></script>
     <script defer src="./js/timer.js"></script>
     <script defer src="./js/statistics.js"></script>
     <script defer src="./js/energy.js"></script>
+    <script defer src="./js/energy-visual.js"></script>
     <script defer src="./js/heatmap.js"></script>
     <script defer src="./js/settings.js"></script>
     <script defer src="./js/app.js"></script>
