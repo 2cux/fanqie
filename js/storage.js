@@ -1,8 +1,9 @@
 (function initStorageModule(global) {
   "use strict";
 
-  const APP_DATA_KEY = "focus-core.data.v1";
-  const DATA_VERSION = 1;
+  const APP_DATA_KEY = "focus-core.data.v2";
+  const LEGACY_APP_DATA_KEY = "focus-core.data.v1";
+  const DATA_VERSION = 2;
   const DAILY_RECORD_LIMIT = 365;
   const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
 
@@ -96,10 +97,22 @@
 
     return Object.fromEntries(
       Object.entries(records)
-        .filter(([dateKey, focused]) => {
+        .map(([dateKey, value]) => {
+          // v1 使用 true 表示当天专注过；迁移时按最小有效值 1 分钟保留。
+          const focusMinutes =
+            value === true
+              ? 1
+              : isPlainObject(value)
+                ? value.focusMinutes
+                : value;
+
+          return [dateKey, focusMinutes];
+        })
+        .filter(([dateKey, focusMinutes]) => {
           const timestamp = parseDateKey(dateKey);
           return (
-            focused === true &&
+            Number.isFinite(focusMinutes) &&
+            focusMinutes > 0 &&
             timestamp !== null &&
             timestamp >= oldestTimestamp &&
             timestamp <= todayTimestamp
@@ -150,13 +163,20 @@
 
   /** 读取并校验应用数据；无数据或数据损坏时返回默认结构。 */
   function loadData() {
-    const storedData = readStorage(APP_DATA_KEY, createDefaultData());
-    return normalizeAppData(storedData);
+    const storedData = readStorage(APP_DATA_KEY, null);
+    if (storedData !== null) return normalizeAppData(storedData);
+
+    const legacyData = readStorage(LEGACY_APP_DATA_KEY, null);
+    if (legacyData === null) return createDefaultData();
+
+    const migratedData = normalizeAppData(legacyData);
+    writeStorage(APP_DATA_KEY, migratedData);
+    return migratedData;
   }
 
   /**
    * 按分类合并部分数据并保存。
-   * dailyRecords 中传入 false 可删除对应日期记录。
+   * dailyRecords 中传入 0 或 false 可删除对应日期记录。
    */
   function updateData(partialData) {
     if (!isPlainObject(partialData)) return false;
@@ -189,7 +209,9 @@
 
   /** 清除三类应用数据并恢复默认值，不影响独立的计时器运行状态。 */
   function clearData() {
-    return removeStorage(APP_DATA_KEY);
+    const clearedCurrentData = removeStorage(APP_DATA_KEY);
+    const clearedLegacyData = removeStorage(LEGACY_APP_DATA_KEY);
+    return clearedCurrentData && clearedLegacyData;
   }
 
   global.FocusCoreStorage = Object.freeze({
