@@ -3,11 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b1512" />
     <meta
       name="description"
       content="一个在浏览器本地运行的轻量化个人专注计时器。"
     />
-    <title>专注核心</title>
+    <title>专注栖所</title>
     <link rel="stylesheet" href="./css/style.css" />
   </head>
   <body data-focus-state="idle">
@@ -28,7 +29,15 @@
           </div>
         </div>
 
-        <button class="icon-button" type="button" aria-label="打开设置" title="设置">
+        <button
+          class="icon-button"
+          data-settings-open
+          type="button"
+          aria-label="打开设置"
+          aria-controls="settings-dialog"
+          aria-expanded="false"
+          title="设置"
+        >
           <span aria-hidden="true">⚙</span>
         </button>
       </header>
@@ -41,13 +50,13 @@
             <article class="stat-card">
               <span class="stat-card__index">01</span>
               <p>今日专注</p>
-              <strong>0<small> 分钟</small></strong>
+              <strong><span data-stat-today>0</span><small> 分钟</small></strong>
               <span class="stat-card__line" aria-hidden="true"></span>
             </article>
             <article class="stat-card">
               <span class="stat-card__index">03</span>
               <p>累计专注</p>
-              <strong>0<small> 小时</small></strong>
+              <strong><span data-stat-total>0</span><small> 分钟</small></strong>
               <span class="stat-card__line" aria-hidden="true"></span>
             </article>
           </aside>
@@ -77,7 +86,12 @@
 
             <div class="timer">
               <h2 id="timer-title" class="visually-hidden">专注计时器</h2>
-              <p class="timer__label" data-timer-status>未开始</p>
+              <p
+                class="timer__label"
+                data-timer-status
+                role="status"
+                aria-live="polite"
+              >未开始</p>
               <time
                 class="timer__display"
                 data-timer-display
@@ -94,13 +108,13 @@
             <article class="stat-card">
               <span class="stat-card__index">02</span>
               <p>本周专注</p>
-              <strong>0<small> 分钟</small></strong>
+              <strong><span data-stat-week>0</span><small> 分钟</small></strong>
               <span class="stat-card__line" aria-hidden="true"></span>
             </article>
             <article class="stat-card">
               <span class="stat-card__index">04</span>
               <p>连续专注天数</p>
-              <strong>0<small> 天</small></strong>
+              <strong><span data-stat-streak>0</span><small> 天</small></strong>
               <span class="stat-card__line" aria-hidden="true"></span>
             </article>
           </aside>
@@ -126,11 +140,74 @@
       </footer>
     </div>
 
+    <div class="app-notice" data-app-notice role="status" aria-live="polite" hidden></div>
+
+    <dialog class="settings-dialog" id="settings-dialog" aria-labelledby="settings-title">
+      <div class="settings-dialog__panel">
+        <header class="settings-dialog__header">
+          <div>
+            <p class="eyebrow">PREFERENCES</p>
+            <h2 id="settings-title">设置</h2>
+          </div>
+          <button
+            class="dialog-close"
+            data-settings-close
+            type="button"
+            aria-label="关闭设置"
+          >×</button>
+        </header>
+
+        <div class="settings-list">
+          <section class="settings-item">
+            <div>
+              <h3>导出数据</h3>
+              <p>保存累计专注时间与 Energy。</p>
+            </div>
+            <button class="secondary-button" data-export-data type="button">
+              导出 JSON
+            </button>
+          </section>
+
+          <section class="settings-item settings-item--danger">
+            <div>
+              <h3>清除数据</h3>
+              <p>移除累计、能量、连续天数和热力图记录。</p>
+            </div>
+            <button class="danger-button" data-request-clear type="button">
+              清除数据
+            </button>
+          </section>
+        </div>
+        <p class="settings-feedback" data-settings-feedback role="status"></p>
+      </div>
+    </dialog>
+
+    <dialog
+      class="confirm-dialog"
+      id="clear-confirm-dialog"
+      aria-labelledby="clear-confirm-title"
+    >
+      <div class="confirm-dialog__panel">
+        <span class="confirm-dialog__mark" aria-hidden="true">!</span>
+        <h2 id="clear-confirm-title">确认删除所有专注数据？</h2>
+        <p>此操作无法撤销，本地累计记录将被永久清除。</p>
+        <div class="confirm-dialog__actions">
+          <button class="secondary-button" data-cancel-clear type="button">
+            取消
+          </button>
+          <button class="danger-button" data-confirm-clear type="button">
+            确认删除
+          </button>
+        </div>
+      </div>
+    </dialog>
+
     <script defer src="./js/storage.js"></script>
     <script defer src="./js/timer.js"></script>
     <script defer src="./js/statistics.js"></script>
     <script defer src="./js/energy.js"></script>
     <script defer src="./js/heatmap.js"></script>
+    <script defer src="./js/settings.js"></script>
     <script defer src="./js/app.js"></script>
   </body>
 </html>

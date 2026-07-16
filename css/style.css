@@ -1,8 +1,6 @@
 :root {
   color-scheme: dark;
   --color-bg: #0b1512;
-  --color-surface: #111f1a;
-  --color-surface-soft: #14251f;
   --color-border: rgba(189, 218, 199, 0.12);
   --color-text: #edf3ed;
   --color-muted: #82968a;
@@ -345,6 +343,222 @@ button:focus-visible {
 .icon-button:hover {
   color: var(--color-accent-bright);
   border-color: rgba(139, 211, 167, 0.3);
+}
+
+.icon-button:active,
+.primary-button:active,
+.secondary-button:active,
+.danger-button:active,
+.dialog-close:active {
+  transform: translateY(1px);
+}
+
+.primary-button[data-state="running"] {
+  color: #f4fff7;
+  background: rgba(139, 211, 167, 0.17);
+  border-color: rgba(168, 226, 188, 0.56);
+}
+
+.app-notice {
+  position: fixed;
+  z-index: 40;
+  right: 24px;
+  bottom: 24px;
+  max-width: min(360px, calc(100% - 48px));
+  padding: 11px 15px;
+  color: var(--color-accent-bright);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  background: #172a22;
+  border: 1px solid rgba(139, 211, 167, 0.22);
+  border-radius: 12px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.32);
+}
+
+.app-notice[data-type="error"] {
+  color: #edc3b9;
+  border-color: rgba(213, 121, 102, 0.3);
+}
+
+.app-notice[hidden] {
+  display: none;
+}
+
+body[data-page-visible="false"] .ambient-background *,
+body[data-page-visible="false"] .ambient-background::before,
+body[data-page-visible="false"] .ambient-background::after,
+body[data-page-visible="false"] .energy-core *,
+body[data-page-visible="false"] .energy-core::before,
+body[data-page-visible="false"] .energy-core::after {
+  animation-play-state: paused !important;
+}
+
+.settings-dialog,
+.confirm-dialog {
+  width: min(calc(100% - 32px), 520px);
+  max-height: calc(100vh - 40px);
+  padding: 0;
+  color: var(--color-text);
+  background: transparent;
+  border: 0;
+  overflow: visible;
+}
+
+.settings-dialog::backdrop,
+.confirm-dialog::backdrop {
+  background: rgba(3, 10, 7, 0.72);
+  backdrop-filter: blur(7px);
+}
+
+.settings-dialog__panel,
+.confirm-dialog__panel {
+  background: #13231d;
+  border: 1px solid rgba(189, 218, 199, 0.15);
+  border-radius: 26px;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.42);
+}
+
+.settings-dialog__panel {
+  padding: 30px;
+}
+
+.settings-dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 26px;
+}
+
+.settings-dialog h2,
+.confirm-dialog h2,
+.settings-item h3,
+.settings-item p,
+.confirm-dialog p {
+  margin: 0;
+}
+
+.settings-dialog h2 {
+  margin-top: 6px;
+  font-family: "Songti SC", SimSun, serif;
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.dialog-close {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  color: var(--color-muted);
+  font-size: 1.45rem;
+  line-height: 1;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+}
+
+.dialog-close:hover {
+  color: var(--color-text);
+}
+
+.settings-list {
+  display: grid;
+  gap: 10px;
+}
+
+.settings-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.018);
+  border: 1px solid var(--color-border);
+  border-radius: 17px;
+}
+
+.settings-item h3 {
+  margin-bottom: 7px;
+  font-size: 0.88rem;
+  font-weight: 550;
+  letter-spacing: 0.04em;
+}
+
+.settings-item p,
+.confirm-dialog p {
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  line-height: 1.65;
+}
+
+.secondary-button,
+.danger-button {
+  flex: 0 0 auto;
+  min-width: 102px;
+  padding: 10px 15px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  border-radius: 999px;
+}
+
+.secondary-button {
+  color: var(--color-accent-bright);
+  background: rgba(139, 211, 167, 0.07);
+  border: 1px solid rgba(139, 211, 167, 0.24);
+}
+
+.secondary-button:hover {
+  background: rgba(139, 211, 167, 0.13);
+}
+
+.danger-button {
+  color: #edc3b9;
+  background: rgba(201, 104, 84, 0.06);
+  border: 1px solid rgba(213, 121, 102, 0.25);
+}
+
+.danger-button:hover {
+  background: rgba(201, 104, 84, 0.12);
+  border-color: rgba(225, 139, 121, 0.42);
+}
+
+.settings-feedback {
+  min-height: 1.2em;
+  margin: 14px 4px 0;
+  color: var(--color-accent);
+  font-size: 0.7rem;
+}
+
+.confirm-dialog__panel {
+  padding: 34px;
+  text-align: center;
+}
+
+.confirm-dialog__mark {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  margin: 0 auto 18px;
+  place-items: center;
+  color: #edc3b9;
+  font-family: Georgia, serif;
+  background: rgba(201, 104, 84, 0.08);
+  border: 1px solid rgba(213, 121, 102, 0.24);
+  border-radius: 50%;
+}
+
+.confirm-dialog h2 {
+  margin-bottom: 10px;
+  font-family: "Songti SC", SimSun, serif;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.confirm-dialog__actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 26px;
 }
 
 .app-main {
@@ -977,6 +1191,10 @@ button:focus-visible {
   .heatmap {
     padding: 18px 12px;
   }
+
+  .ambient-particles i:nth-child(n + 6) {
+    display: none;
+  }
 }
 
 @media (max-width: 430px) {
@@ -998,6 +1216,20 @@ button:focus-visible {
 
   .app-footer span {
     width: 14px;
+  }
+
+  .settings-dialog__panel,
+  .confirm-dialog__panel {
+    padding: 24px 18px;
+  }
+
+  .settings-item {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .settings-item button {
+    width: 100%;
   }
 }
 

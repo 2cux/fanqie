@@ -145,17 +145,31 @@
         '<span class="heatmap__legend-cell heatmap__legend-cell--focused"></span>' +
         "<span>有专注</span>";
 
-      const showTooltip = (cell, clientX, clientY) => {
-        tooltip.innerHTML = `日期：${cell.dataset.date}<br>状态：${cell.dataset.status}`;
-        tooltip.hidden = false;
-        const containerRect = this.container.getBoundingClientRect();
-        const halfWidth = tooltip.offsetWidth / 2;
+      let activeCell = null;
+      let containerRect = null;
+      let tooltipHalfWidth = 0;
+
+      const positionTooltip = (clientX, clientY) => {
+        if (containerRect === null) return;
+
         const x = Math.min(
-          containerRect.width - halfWidth - 8,
-          Math.max(halfWidth + 8, clientX - containerRect.left),
+          containerRect.width - tooltipHalfWidth - 8,
+          Math.max(tooltipHalfWidth + 8, clientX - containerRect.left),
         );
         tooltip.style.left = `${x}px`;
         tooltip.style.top = `${Math.max(58, clientY - containerRect.top)}px`;
+      };
+
+      const showTooltip = (cell, clientX, clientY) => {
+        if (activeCell !== cell) {
+          activeCell = cell;
+          tooltip.innerHTML = `日期：${cell.dataset.date}<br>状态：${cell.dataset.status}`;
+          tooltip.hidden = false;
+          containerRect = this.container.getBoundingClientRect();
+          tooltipHalfWidth = tooltip.offsetWidth / 2;
+        }
+
+        positionTooltip(clientX, clientY);
       };
 
       grid.addEventListener("pointerover", (event) => {
@@ -169,6 +183,8 @@
       grid.addEventListener("pointerout", (event) => {
         if (!event.relatedTarget?.closest?.("[data-date]")) {
           tooltip.hidden = true;
+          activeCell = null;
+          containerRect = null;
         }
       });
 

@@ -16,6 +16,7 @@
     state: TIMER_STATES.IDLE,
     elapsedSeconds: 0,
     startedAt: null,
+    creditedMinutes: 0,
   });
 
   /**
@@ -44,6 +45,25 @@
       return elapsedSeconds + runningSeconds;
     }
 
+    /** 返回尚未结算到统计系统的完整分钟数。 */
+    getUncreditedMinutes(now = Date.now()) {
+      const completedMinutes = Math.floor(this.getElapsedSeconds(now) / 60);
+      return Math.max(0, completedMinutes - this.snapshot.creditedMinutes);
+    }
+
+    /** 标记已经成功写入统计系统的分钟数。 */
+    markMinutesCredited(minutes) {
+      const availableMinutes = this.getUncreditedMinutes();
+      const creditedNow = Math.min(Math.floor(minutes), availableMinutes);
+      if (!Number.isFinite(creditedNow) || creditedNow <= 0) return false;
+
+      this.snapshot = {
+        ...this.snapshot,
+        creditedMinutes: this.snapshot.creditedMinutes + creditedNow,
+      };
+      return this.#persist();
+    }
+
     start(now = Date.now()) {
       if (this.state !== TIMER_STATES.IDLE) return false;
 
@@ -51,6 +71,7 @@
         state: TIMER_STATES.RUNNING,
         elapsedSeconds: 0,
         startedAt: now,
+        creditedMinutes: 0,
       };
       this.#persist();
       return true;
@@ -60,6 +81,7 @@
       if (this.state !== TIMER_STATES.RUNNING) return false;
 
       this.snapshot = {
+        ...this.snapshot,
         state: TIMER_STATES.PAUSED,
         elapsedSeconds: this.getElapsedSeconds(now),
         startedAt: null,
@@ -81,7 +103,7 @@
     }
 
     #persist() {
-      writeStorage(STORAGE_KEY, this.snapshot);
+      return writeStorage(STORAGE_KEY, this.snapshot);
     }
 
     #restore() {
@@ -97,6 +119,10 @@
         Number.isFinite(saved?.startedAt) && saved.startedAt > 0
           ? saved.startedAt
           : null;
+      const creditedMinutes =
+        Number.isFinite(saved?.creditedMinutes) && saved.creditedMinutes >= 0
+          ? Math.floor(saved.creditedMinutes)
+          : 0;
 
       // 运行状态缺失开始时间时无法可靠还原，降级为暂停以避免错误累加。
       if (state === TIMER_STATES.RUNNING && startedAt === null) {
@@ -104,6 +130,10 @@
           state: TIMER_STATES.PAUSED,
           elapsedSeconds,
           startedAt: null,
+          creditedMinutes: Math.min(
+            creditedMinutes,
+            Math.floor(elapsedSeconds / 60),
+          ),
         };
       }
 
@@ -111,6 +141,8 @@
         state,
         elapsedSeconds: state === TIMER_STATES.IDLE ? 0 : elapsedSeconds,
         startedAt: state === TIMER_STATES.RUNNING ? startedAt : null,
+        creditedMinutes:
+          state === TIMER_STATES.IDLE ? 0 : creditedMinutes,
       };
     }
   }
