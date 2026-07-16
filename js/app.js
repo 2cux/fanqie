@@ -30,6 +30,7 @@
     const display = document.querySelector("[data-timer-display]");
     const status = document.querySelector("[data-timer-status]");
     const actionButton = document.querySelector("[data-timer-action]");
+    const heatmapContainer = document.querySelector("[data-focus-heatmap]");
 
     if (!display || !status || !actionButton) {
       console.error("计时器界面初始化失败：缺少必要的页面元素。");
@@ -37,6 +38,11 @@
     }
 
     const timer = new FocusTimer();
+
+    if (heatmapContainer && global.FocusCoreHeatmap) {
+      const { FocusHeatmap } = global.FocusCoreHeatmap;
+      new FocusHeatmap(heatmapContainer).render();
+    }
 
     function render() {
       const elapsedSeconds = timer.getElapsedSeconds();
