@@ -32,11 +32,18 @@
             </div>
           </div>
 
-          <div class="timer" aria-live="polite">
+          <div class="timer">
             <h2 id="timer-title" class="visually-hidden">专注计时器</h2>
-            <p class="timer__label">本次专注</p>
-            <time class="timer__display" datetime="PT25M">25:00</time>
-            <button class="primary-button" type="button">开始专注</button>
+            <p class="timer__label" data-timer-status>未开始</p>
+            <time
+              class="timer__display"
+              data-timer-display
+              datetime="PT0S"
+              aria-live="off"
+            >00:00:00</time>
+            <button class="primary-button" data-timer-action type="button">
+              开始专注
+            </button>
           </div>
         </section>
 
@@ -96,6 +103,8 @@
       </footer>
     </div>
 
-    <script type="module" src="./js/app.js"></script>
+    <script defer src="./js/storage.js"></script>
+    <script defer src="./js/timer.js"></script>
+    <script defer src="./js/app.js"></script>
   </body>
 </html>
