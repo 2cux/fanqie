@@ -154,6 +154,8 @@ button:focus-visible {
 }
 
 .energy-core {
+  --energy-strength: 0;
+  --orbit-radius: clamp(116px, 14.5vw, 164px);
   position: relative;
   display: grid;
   width: clamp(270px, 31vw, 356px);
@@ -176,6 +178,14 @@ button:focus-visible {
 .energy-core::before {
   inset: 8%;
   border: 1px solid rgba(191, 232, 207, 0.13);
+  opacity: calc(0.38 + var(--energy-strength) * 0.56);
+  box-shadow:
+    0 0 calc(24px + var(--energy-strength) * 48px)
+      rgb(105 207 143 / calc(0.06 + var(--energy-strength) * 0.2)),
+    inset 0 0 calc(18px + var(--energy-strength) * 22px)
+      rgb(172 236 195 / calc(0.03 + var(--energy-strength) * 0.1));
+  animation: core-halo-breathe 9s ease-in-out infinite;
+  will-change: transform;
 }
 
 .energy-core::after {
@@ -186,12 +196,106 @@ button:focus-visible {
   box-shadow:
     inset -24px -30px 50px rgba(3, 20, 12, 0.48),
     inset 14px 14px 36px rgba(219, 255, 231, 0.09),
-    0 0 62px rgba(89, 185, 126, 0.25);
+    0 0 calc(48px + var(--energy-strength) * 52px)
+      rgb(89 185 126 / calc(0.16 + var(--energy-strength) * 0.3));
+  filter: brightness(calc(0.94 + var(--energy-strength) * 0.16));
+  animation: core-breathe 7s ease-in-out infinite;
+  will-change: transform;
+}
+
+.energy-core[data-focus-state="running"]::before {
+  animation-duration: 5.2s;
+}
+
+.energy-core[data-focus-state="running"]::after {
+  animation-name: core-breathe-active;
+  animation-duration: 4.4s;
+}
+
+.energy-core[data-focus-state="paused"]::before {
+  animation-duration: 14s;
+}
+
+.energy-core[data-focus-state="paused"]::after {
+  animation-duration: 11s;
+}
+
+.core-particles {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  pointer-events: none;
+}
+
+.core-particles i {
+  --particle-size: 4px;
+  --particle-opacity: calc(0.18 + var(--energy-strength) * 0.62);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--particle-size);
+  height: var(--particle-size);
+  opacity: var(--particle-opacity);
+  background: #b9e8c9;
+  border-radius: 50%;
+  box-shadow: 0 0 9px rgba(141, 225, 171, 0.68);
+  animation: core-particle-orbit var(--orbit-duration) linear infinite;
+  will-change: transform;
+}
+
+.core-particles i:nth-child(1) {
+  --start-angle: 12deg;
+  --particle-radius: var(--orbit-radius);
+  --orbit-duration: 21s;
+}
+
+.core-particles i:nth-child(2) {
+  --start-angle: 82deg;
+  --particle-radius: calc(var(--orbit-radius) * 0.86);
+  --orbit-duration: 27s;
+  --particle-size: 3px;
+}
+
+.core-particles i:nth-child(3) {
+  --start-angle: 148deg;
+  --particle-radius: calc(var(--orbit-radius) * 0.73);
+  --orbit-duration: 18s;
+  --particle-size: 5px;
+}
+
+.core-particles i:nth-child(4) {
+  --start-angle: 215deg;
+  --particle-radius: calc(var(--orbit-radius) * 0.94);
+  --orbit-duration: 31s;
+  --particle-size: 3px;
+}
+
+.core-particles i:nth-child(5) {
+  --start-angle: 282deg;
+  --particle-radius: calc(var(--orbit-radius) * 0.64);
+  --orbit-duration: 23s;
+}
+
+.core-particles i:nth-child(6) {
+  --start-angle: 334deg;
+  --particle-radius: calc(var(--orbit-radius) * 0.8);
+  --orbit-duration: 16s;
+  --particle-size: 2px;
+}
+
+.energy-core[data-focus-state="running"] .core-particles i {
+  opacity: calc(0.38 + var(--energy-strength) * 0.62);
+  animation-duration: calc(var(--orbit-duration) * 0.68);
+}
+
+.energy-core[data-focus-state="paused"] .core-particles i {
+  opacity: calc(0.1 + var(--energy-strength) * 0.34);
+  animation-duration: calc(var(--orbit-duration) * 1.7);
 }
 
 .energy-core__inner {
   position: relative;
-  z-index: 1;
+  z-index: 3;
   display: flex;
   align-items: center;
   flex-direction: column;
@@ -218,6 +322,46 @@ button:focus-visible {
   color: rgba(220, 242, 227, 0.52);
   font-size: 0.62rem;
   letter-spacing: 0.16em;
+}
+
+@keyframes core-breathe {
+  0%,
+  100% {
+    transform: scale(0.985);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+@keyframes core-breathe-active {
+  0%,
+  100% {
+    transform: scale(0.975);
+  }
+  50% {
+    transform: scale(1.035);
+  }
+}
+
+@keyframes core-halo-breathe {
+  0%,
+  100% {
+    transform: scale(0.98);
+  }
+  50% {
+    transform: scale(1.065);
+  }
+}
+
+@keyframes core-particle-orbit {
+  from {
+    transform: rotate(var(--start-angle)) translateX(var(--particle-radius));
+  }
+  to {
+    transform: rotate(calc(var(--start-angle) + 1turn))
+      translateX(var(--particle-radius));
+  }
 }
 
 .timer {
@@ -628,6 +772,8 @@ button:focus-visible {
   *,
   *::before,
   *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
   }
 }

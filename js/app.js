@@ -31,6 +31,8 @@
     const status = document.querySelector("[data-timer-status]");
     const actionButton = document.querySelector("[data-timer-action]");
     const heatmapContainer = document.querySelector("[data-focus-heatmap]");
+    const energyCore = document.querySelector("[data-energy-core]");
+    const energyValue = document.querySelector("[data-energy-value]");
 
     if (!display || !status || !actionButton) {
       console.error("计时器界面初始化失败：缺少必要的页面元素。");
@@ -38,6 +40,24 @@
     }
 
     const timer = new FocusTimer();
+
+    function syncEnergyCore() {
+      if (!energyCore || !energyValue || !global.FocusCoreEnergy) return;
+
+      const energy = Math.max(0, global.FocusCoreEnergy.getEnergy());
+      // 对数映射让低能量有变化，高能量又不会产生过强光晕。
+      const glowStrength = Math.min(
+        1,
+        Math.log1p(energy) / Math.log(10_001),
+      );
+
+      energyValue.textContent = energy.toLocaleString("zh-CN");
+      energyCore.style.setProperty(
+        "--energy-strength",
+        glowStrength.toFixed(3),
+      );
+      energyCore.setAttribute("aria-label", `能量核心，当前能量 ${energy}`);
+    }
 
     if (heatmapContainer && global.FocusCoreHeatmap) {
       const { FocusHeatmap } = global.FocusCoreHeatmap;
@@ -51,6 +71,12 @@
       status.textContent = STATUS_TEXT[timer.state];
       actionButton.textContent = ACTION_TEXT[timer.state];
       actionButton.dataset.state = timer.state;
+      if (
+        energyCore &&
+        energyCore.dataset.focusState !== timer.state
+      ) {
+        energyCore.dataset.focusState = timer.state;
+      }
     }
 
     actionButton.addEventListener("click", () => {
@@ -71,9 +97,14 @@
     }, 250);
 
     document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) render();
+      if (!document.hidden) {
+        syncEnergyCore();
+        render();
+      }
     });
+    global.addEventListener("focuscore:energychange", syncEnergyCore);
 
+    syncEnergyCore();
     render();
   }
 

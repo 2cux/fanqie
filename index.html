@@ -52,10 +52,18 @@
               <span>INNER FOCUS</span>
             </div>
 
-            <div class="energy-core" aria-label="能量核心球">
+            <div
+              class="energy-core"
+              data-energy-core
+              data-focus-state="idle"
+              aria-label="能量核心，当前能量 0"
+            >
+              <div class="core-particles" aria-hidden="true">
+                <i></i><i></i><i></i><i></i><i></i><i></i>
+              </div>
               <div class="energy-core__inner">
                 <span>ENERGY</span>
-                <strong>0</strong>
+                <strong data-energy-value>0</strong>
                 <small>能量核心</small>
               </div>
             </div>

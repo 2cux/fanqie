@@ -47,6 +47,16 @@
     return Math.floor(loadData().permanentData.energy);
   }
 
+  function emitEnergyChange(energy) {
+    if (typeof global.CustomEvent !== "function") return;
+
+    global.dispatchEvent(
+      new CustomEvent("focuscore:energychange", {
+        detail: { energy },
+      }),
+    );
+  }
+
   /**
    * 增加完整分钟对应的 Energy，默认增加 1。
    * 小数部分不会转换为 Energy，应由调用方在累计满一分钟时调用。
@@ -63,7 +73,10 @@
 
     const nextEnergy = currentEnergy + increment;
     data.permanentData.energy = nextEnergy;
-    return saveData(data) ? nextEnergy : currentEnergy;
+    if (!saveData(data)) return currentEnergy;
+
+    emitEnergyChange(nextEnergy);
+    return nextEnergy;
   }
 
   /**
@@ -104,7 +117,10 @@
 
     data.permanentData.energy = nextEnergy;
     data.userState.lastEnergyCheckDate = formatDateKey(today);
-    return saveData(data) ? nextEnergy : originalEnergy;
+    if (!saveData(data)) return originalEnergy;
+
+    if (nextEnergy !== originalEnergy) emitEnergyChange(nextEnergy);
+    return nextEnergy;
   }
 
   global.FocusCoreEnergy = Object.freeze({
