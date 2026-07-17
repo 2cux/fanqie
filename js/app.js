@@ -80,14 +80,23 @@
     function renderStatValue(element, formattedValue) {
       if (!element || element.getAttribute("aria-label") === formattedValue) return;
 
-      const fragments = formattedValue.split(" ").map((fragment) => {
-        const part = document.createElement("span");
-        const isNumber = /^\d+$/.test(fragment);
-        part.className = isNumber ? "stat-card__number" : "stat-card__unit";
-        part.setAttribute("aria-hidden", "true");
-        part.textContent = fragment;
-        return part;
-      });
+      const tokens = formattedValue.trim().split(/\s+/);
+      const fragments = [];
+
+      for (let index = 0; index < tokens.length; index += 2) {
+        const measure = document.createElement("span");
+        const number = document.createElement("span");
+        const unit = document.createElement("span");
+
+        measure.className = "stat-card__measure";
+        measure.setAttribute("aria-hidden", "true");
+        number.className = "stat-card__number";
+        number.textContent = tokens[index];
+        unit.className = "stat-card__unit";
+        unit.textContent = tokens[index + 1] ?? "";
+        measure.append(number, unit);
+        fragments.push(measure);
+      }
 
       element.replaceChildren(...fragments);
       element.setAttribute("aria-label", formattedValue);

@@ -1323,7 +1323,6 @@ body[data-page-visible="false"] .energy-core::after {
   color: #dce2da;
   font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(1.65rem, 2.8vw, 2.25rem);
-  font-variant-numeric: tabular-nums;
   font-weight: 400;
   white-space: nowrap;
 }
@@ -1331,13 +1330,23 @@ body[data-page-visible="false"] .energy-core::after {
 .stat-card__value {
   display: inline-flex;
   align-items: baseline;
-  gap: 0.18em;
+  align-items: first baseline;
+  gap: 0.38em;
   line-height: 1;
+}
+
+.stat-card__measure {
+  display: inline-flex;
+  align-items: baseline;
+  align-items: first baseline;
+  gap: 0.18em;
 }
 
 .stat-card__number {
   color: #e3e7df;
   font: inherit;
+  font-variant-numeric: lining-nums tabular-nums;
+  font-feature-settings: "lnum" 1, "tnum" 1;
   line-height: 1;
 }
 
