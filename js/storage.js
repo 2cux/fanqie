@@ -65,7 +65,8 @@
       userState: {
         currentStreak: 0,
         lastFocusDate: null,
-        lastEnergyCheckDate: null,
+        lastFocusTimestamp: null,
+        lastEnergyDecayTimestamp: null,
       },
     };
   }
@@ -211,10 +212,15 @@
         currentStreak: derivedFocusState.currentStreak,
         lastFocusDate:
           derivedFocusState.lastFocusDate ?? historicalLastFocusDate,
-        lastEnergyCheckDate:
-          typeof userState.lastEnergyCheckDate === "string" &&
-          parseDateKey(userState.lastEnergyCheckDate) !== null
-            ? userState.lastEnergyCheckDate
+        lastFocusTimestamp:
+          Number.isFinite(userState.lastFocusTimestamp) &&
+          userState.lastFocusTimestamp >= 0
+            ? userState.lastFocusTimestamp
+            : null,
+        lastEnergyDecayTimestamp:
+          Number.isFinite(userState.lastEnergyDecayTimestamp) &&
+          userState.lastEnergyDecayTimestamp >= 0
+            ? userState.lastEnergyDecayTimestamp
             : null,
       },
     };

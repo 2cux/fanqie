@@ -2,51 +2,14 @@
   "use strict";
 
   const { loadData, updateData } = global.FocusCoreStorage;
-  const MAX_CATCH_UP_DAYS = 365;
+  const ENERGY_DECAY_INTERVAL = 24 * 60 * 60 * 1000;
 
-  function formatDateKey(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  }
-
-  function parseDateInput(value) {
+  function getTimestamp(value) {
     if (value instanceof Date && !Number.isNaN(value.getTime())) {
-      return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+      return value.getTime();
     }
 
-    if (typeof value !== "string") return null;
-
-    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-    if (!match) return null;
-
-    const date = new Date(
-      Number(match[1]),
-      Number(match[2]) - 1,
-      Number(match[3]),
-    );
-    const isRealDate =
-      date.getFullYear() === Number(match[1]) &&
-      date.getMonth() === Number(match[2]) - 1 &&
-      date.getDate() === Number(match[3]);
-
-    return isRealDate ? date : null;
-  }
-
-  function shiftDate(date, days) {
-    return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
-  }
-
-  function getFocusMinutes(records, date) {
-    const record = records[formatDateKey(date)];
-    const minutes =
-      record === true
-        ? 1
-        : record !== null && typeof record === "object"
-          ? record.focusMinutes
-          : record;
-    return Number.isFinite(minutes) && minutes > 0 ? minutes : 0;
+    return Number.isFinite(value) ? value : null;
   }
 
   function getEnergy() {
@@ -64,8 +27,8 @@
   }
 
   /**
-   * 增加完整分钟对应的 Energy，默认增加 1。
-   * 小数部分不会转换为 Energy，应由调用方在累计满一分钟时调用。
+   * Add Energy for completed focus minutes and record the precise time of the
+   * latest valid focus. Fractions do not produce Energy.
    */
   function addEnergy(completedMinutes = 1) {
     if (!Number.isFinite(completedMinutes) || completedMinutes <= 0) {
@@ -78,7 +41,17 @@
     if (increment < 1) return currentEnergy;
 
     const nextEnergy = currentEnergy + increment;
-    if (!updateData({ permanentData: { energy: nextEnergy } })) {
+    if (
+      !updateData({
+        permanentData: { energy: nextEnergy },
+        userState: {
+          lastFocusTimestamp: Date.now(),
+          // A valid focus starts a new inactivity cycle, even if it happens in
+          // the same millisecond as the previous decay check.
+          lastEnergyDecayTimestamp: null,
+        },
+      })
+    ) {
       return currentEnergy;
     }
 
@@ -87,45 +60,39 @@
   }
 
   /**
-   * 检查尚未处理的自然日：前一天有专注、当天无专注时减半一次。
-   * 返回检查完成后的 Energy。
+   * Halve Energy once after 24 continuous hours without valid focus.
+   * A decay is eligible only when the latest focus has not already caused one.
    */
-  function checkDecay(referenceDate = new Date()) {
-    const today = parseDateInput(referenceDate);
-    if (today === null) return getEnergy();
+  function checkDecay(referenceTime = new Date()) {
+    const nowTimestamp = getTimestamp(referenceTime);
+    if (nowTimestamp === null) return getEnergy();
 
     const data = loadData();
     const originalEnergy = Math.floor(data.permanentData.energy);
-    const lastCheckDate = parseDateInput(
-      data.userState.lastEnergyCheckDate,
+    const lastFocusTimestamp = getTimestamp(
+      data.userState.lastFocusTimestamp,
+    );
+    const lastEnergyDecayTimestamp = getTimestamp(
+      data.userState.lastEnergyDecayTimestamp,
     );
 
-    // 第一次启用能量模块时只检查当前日，避免追溯未知的历史状态。
-    let cursor = lastCheckDate === null ? today : shiftDate(lastCheckDate, 1);
-    const earliestCatchUpDate = shiftDate(today, -(MAX_CATCH_UP_DAYS - 1));
-    if (cursor < earliestCatchUpDate) cursor = earliestCatchUpDate;
+    const hasBeenInactiveFor24Hours =
+      lastFocusTimestamp !== null &&
+      nowTimestamp - lastFocusTimestamp >= ENERGY_DECAY_INTERVAL;
+    const latestFocusHasNotDecayed =
+      lastFocusTimestamp !== null &&
+      (lastEnergyDecayTimestamp === null ||
+        lastEnergyDecayTimestamp < lastFocusTimestamp);
 
-    // 系统时间回拨时不重复处理已经检查过的日期。
-    if (cursor > today) return originalEnergy;
-
-    let nextEnergy = originalEnergy;
-    while (cursor <= today) {
-      const yesterday = shiftDate(cursor, -1);
-      const focusedYesterday =
-        getFocusMinutes(data.dailyRecords, yesterday) > 0;
-      const focusedToday = getFocusMinutes(data.dailyRecords, cursor) > 0;
-
-      if (focusedYesterday && !focusedToday) {
-        nextEnergy = Math.floor(nextEnergy / 2);
-      }
-
-      cursor = shiftDate(cursor, 1);
+    if (!hasBeenInactiveFor24Hours || !latestFocusHasNotDecayed) {
+      return originalEnergy;
     }
 
+    const nextEnergy = Math.floor(originalEnergy / 2);
     if (
       !updateData({
         permanentData: { energy: nextEnergy },
-        userState: { lastEnergyCheckDate: formatDateKey(today) },
+        userState: { lastEnergyDecayTimestamp: nowTimestamp },
       })
     ) {
       return originalEnergy;

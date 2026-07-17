@@ -95,6 +95,8 @@ test("每满一分钟在内存中同步统计和 Energy，并只统一持久化�
   assert.equal(liveStats.todayFocusMinutes, 1);
   assert.equal(liveStats.totalFocusMinutes, 1);
   assert.equal(liveData.permanentData.energy, 1);
+  assert.equal(Number.isFinite(liveData.userState.lastFocusTimestamp), true);
+  assert.equal(liveData.userState.lastEnergyDecayTimestamp, null);
   assert.equal(runtime.getWriteCount(), 2);
 
   assert.equal(storage.persist(), true);
@@ -221,6 +223,88 @@ test("next-day reload resets only the current timer snapshot", () => {
   assert.equal(data.permanentData.totalFocusMinutes, 42);
   assert.equal(data.permanentData.energy, 9);
   assert.equal(data.dailyRecords[historicalDate].focusMinutes, 42);
+});
+
+test("Energy decays only after 24 continuous hours without valid focus", () => {
+  const lastFocusTimestamp = new Date(2026, 6, 16, 10, 0).getTime();
+  const values = new Map([
+    [
+      "focus-core.state.v4",
+      JSON.stringify({
+        version: 4,
+        data: {
+          permanentData: { totalFocusMinutes: 60, energy: 9 },
+          dailyRecords: {},
+          userState: { lastFocusTimestamp },
+        },
+        timer: {
+          state: "idle",
+          elapsedSeconds: 0,
+          startedAt: null,
+          creditedMinutes: 0,
+          timerDate: localDateKey(),
+        },
+      }),
+    ],
+  ]);
+  const runtime = createRuntime(values);
+  const { FocusCoreEnergy: energy, FocusCoreStorage: storage } =
+    runtime.context;
+
+  assert.equal(energy.checkDecay(new Date(2026, 6, 17, 9, 59)), 9);
+  assert.equal(energy.checkDecay(new Date(2026, 6, 17, 10, 1)), 4);
+  assert.equal(
+    storage.loadData().userState.lastEnergyDecayTimestamp,
+    new Date(2026, 6, 17, 10, 1).getTime(),
+  );
+});
+
+test("Energy decay is idempotent until another valid focus", () => {
+  const lastFocusTimestamp = Date.now() - 25 * 60 * 60 * 1000;
+  const values = new Map([
+    [
+      "focus-core.state.v4",
+      JSON.stringify({
+        version: 4,
+        data: {
+          permanentData: { totalFocusMinutes: 120, energy: 20 },
+          dailyRecords: { [localDateKey()]: { focusMinutes: 120 } },
+          userState: {
+            currentStreak: 1,
+            lastFocusDate: localDateKey(),
+            lastFocusTimestamp,
+          },
+        },
+        timer: {
+          state: "idle",
+          elapsedSeconds: 0,
+          startedAt: null,
+          creditedMinutes: 0,
+          timerDate: localDateKey(),
+        },
+      }),
+    ],
+  ]);
+  const runtime = createRuntime(values);
+  const { FocusCoreEnergy: energy, FocusCoreStorage: storage } =
+    runtime.context;
+  const before = storage.loadData();
+
+  assert.equal(energy.checkDecay(Date.now()), 10);
+  assert.equal(energy.checkDecay(Date.now() + 60_000), 10);
+  assert.equal(energy.checkDecay(Date.now() + 48 * 60 * 60 * 1000), 10);
+
+  const after = storage.loadData();
+  assert.equal(
+    after.permanentData.totalFocusMinutes,
+    before.permanentData.totalFocusMinutes,
+  );
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(after.dailyRecords)),
+    JSON.parse(JSON.stringify(before.dailyRecords)),
+  );
+  assert.equal(after.userState.currentStreak, before.userState.currentStreak);
+  assert.equal(after.userState.lastFocusDate, before.userState.lastFocusDate);
 });
 
 test("旧布尔与数字日记录会迁移为 focusMinutes 对象并保留 365 天", () => {
