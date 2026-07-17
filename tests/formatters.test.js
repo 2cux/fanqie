@@ -11,23 +11,30 @@ vm.runInContext(
   context,
 );
 
-const { formatDuration } = context.FocusCoreFormatters;
+const { formatDuration, formatDays } = context.FocusCoreFormatters;
 
 test("formatDuration formats durations below one hour with min", () => {
-  assert.equal(formatDuration(0), "0min");
-  assert.equal(formatDuration(5), "5min");
-  assert.equal(formatDuration(45), "45min");
-  assert.equal(formatDuration(59), "59min");
+  assert.equal(formatDuration(0), "0 min");
+  assert.equal(formatDuration(5), "5 min");
+  assert.equal(formatDuration(45), "45 min");
+  assert.equal(formatDuration(59), "59 min");
 });
 
 test("formatDuration formats hours and zero-padded remaining minutes", () => {
-  assert.equal(formatDuration(60), "1h 00min");
-  assert.equal(formatDuration(125), "2h 05min");
-  assert.equal(formatDuration(155), "2h 35min");
+  assert.equal(formatDuration(60), "1 h 00 min");
+  assert.equal(formatDuration(125), "2 h 05 min");
+  assert.equal(formatDuration(155), "2 h 35 min");
 });
 
 test("formatDuration safely handles partial and invalid minutes", () => {
-  assert.equal(formatDuration(5.9), "5min");
-  assert.equal(formatDuration(-1), "0min");
-  assert.equal(formatDuration(Number.NaN), "0min");
+  assert.equal(formatDuration(5.9), "5 min");
+  assert.equal(formatDuration(-1), "0 min");
+  assert.equal(formatDuration(Number.NaN), "0 min");
+});
+
+test("formatDays uses the correct English singular and plural units", () => {
+  assert.equal(formatDays(0), "0 days");
+  assert.equal(formatDays(1), "1 day");
+  assert.equal(formatDays(12), "12 days");
+  assert.equal(formatDays(-1), "0 days");
 });

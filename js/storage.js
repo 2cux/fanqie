@@ -76,7 +76,14 @@
       elapsedSeconds: 0,
       startedAt: null,
       creditedMinutes: 0,
+      timerDate: getLocalDateKey(),
     };
+  }
+
+  function getLocalDateKey(date = new Date()) {
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${date.getFullYear()}-${month}-${day}`;
   }
 
   function parseDateKey(dateKey) {
@@ -215,6 +222,20 @@
 
   function normalizeTimer(value) {
     const source = isPlainObject(value) ? value : createDefaultTimer();
+    const today = getLocalDateKey();
+
+    // A timer snapshot belongs to one local calendar day. Accumulated data is
+    // stored separately and must remain untouched when the timer rolls over.
+    if (source.timerDate !== today) {
+      return {
+        state: "paused",
+        elapsedSeconds: 0,
+        startedAt: null,
+        creditedMinutes: 0,
+        timerDate: today,
+      };
+    }
+
     const state = TIMER_STATES.has(source.state) ? source.state : "idle";
     const elapsedSeconds = toNonNegativeNumber(source.elapsedSeconds);
     const startedAt =
@@ -232,6 +253,7 @@
         normalizedState === "idle"
           ? 0
           : Math.floor(toNonNegativeNumber(source.creditedMinutes)),
+      timerDate: today,
     };
   }
 

@@ -19,11 +19,11 @@
     "12月",
   ];
   const ENERGY_LEVELS = [
-    { level: 0, label: "0", description: "0min" },
-    { level: 1, label: "1–30", description: "低能量，1min–30min" },
-    { level: 2, label: "31–60", description: "中等能量，31min–1h 00min" },
-    { level: 3, label: "61–179", description: "高能量，1h 01min–2h 59min" },
-    { level: 4, label: "≥180", description: "强能量，3h 00min 以上" },
+    { level: 0, label: "0", description: "0 min" },
+    { level: 1, label: "1–30", description: "低能量，1 min–30 min" },
+    { level: 2, label: "31–60", description: "中等能量，31 min–1 h 00 min" },
+    { level: 3, label: "61–179", description: "高能量，1 h 01 min–2 h 59 min" },
+    { level: 4, label: "≥180", description: "强能量，3 h 00 min 以上" },
   ];
 
   function formatDateKey(date) {
@@ -141,7 +141,7 @@
       tooltip.hidden = true;
       tooltip.setAttribute("role", "tooltip");
       grid.setAttribute("role", "grid");
-      grid.setAttribute("aria-label", "最近365天每日专注时长热力图");
+      grid.setAttribute("aria-label", "最近一年的每日专注时长热力图");
       months.style.setProperty("--heatmap-weeks", weekCount);
 
       weekdays.innerHTML =

@@ -565,6 +565,7 @@ body[data-page-visible="false"] .energy-core::after {
 
 .app-main {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 104px;
   padding: 0 0 54px;
 }
@@ -982,7 +983,6 @@ body[data-page-visible="false"] .energy-core::after {
   display: grid;
   gap: 94px;
   padding-top: 18px;
-  opacity: 0.66;
 }
 
 .stat-card {
@@ -996,27 +996,45 @@ body[data-page-visible="false"] .energy-core::after {
 }
 
 .stat-card p {
-  margin-bottom: 13px;
-  color: var(--color-muted);
-  font-family: "STSong", "Songti SC", SimSun, serif;
-  font-size: 0.66rem;
-  letter-spacing: 0.16em;
+  margin-bottom: 14px;
+  color: rgba(200, 210, 199, 0.62);
+  font-family: "Avenir Next", Inter, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: 0.22em;
 }
 
 .stat-card strong {
+  display: block;
   color: #dce2da;
   font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(1.65rem, 2.8vw, 2.25rem);
   font-variant-numeric: tabular-nums;
   font-weight: 400;
+  white-space: nowrap;
 }
 
-.stat-card small {
-  margin-left: 4px;
-  color: var(--color-faint);
-  font-family: inherit;
-  font-size: 0.65rem;
+.stat-card__value {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.18em;
+  line-height: 1;
+}
+
+.stat-card__number {
+  color: #e3e7df;
+  font: inherit;
+  line-height: 1;
+}
+
+.stat-card__unit {
+  color: rgba(190, 202, 190, 0.5);
+  font-family: "Avenir Next", Inter, sans-serif;
+  font-size: 0.4em;
   font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.08em;
 }
 
 .stat-card__line {

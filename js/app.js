@@ -3,7 +3,7 @@
 
   /** 页面协调层：连接计时、统计、Energy 与视图，不承载数据规则。 */
   const { FocusTimer, TIMER_STATES } = global.FocusCoreTimer;
-  const { formatDuration } = global.FocusCoreFormatters;
+  const { formatDuration, formatDays } = global.FocusCoreFormatters;
 
   const STATUS_TEXT = Object.freeze({
     [TIMER_STATES.IDLE]: "静候开始",
@@ -74,21 +74,37 @@
       }, 3200);
     }
 
+    function renderStatValue(element, formattedValue) {
+      if (!element || element.getAttribute("aria-label") === formattedValue) return;
+
+      const fragments = formattedValue.split(" ").map((fragment) => {
+        const part = document.createElement("span");
+        const isNumber = /^\d+$/.test(fragment);
+        part.className = isNumber ? "stat-card__number" : "stat-card__unit";
+        part.setAttribute("aria-hidden", "true");
+        part.textContent = fragment;
+        return part;
+      });
+
+      element.replaceChildren(...fragments);
+      element.setAttribute("aria-label", formattedValue);
+    }
+
     function syncStatistics(
       statistics = global.FocusCoreStatistics?.getStatistics(),
     ) {
       if (!statistics) return;
       if (todayStat) {
-        todayStat.textContent = formatDuration(statistics.todayFocusMinutes);
+        renderStatValue(todayStat, formatDuration(statistics.todayFocusMinutes));
       }
       if (weekStat) {
-        weekStat.textContent = formatDuration(statistics.weekFocusMinutes);
+        renderStatValue(weekStat, formatDuration(statistics.weekFocusMinutes));
       }
       if (totalStat) {
-        totalStat.textContent = formatDuration(statistics.totalFocusMinutes);
+        renderStatValue(totalStat, formatDuration(statistics.totalFocusMinutes));
       }
       if (streakStat) {
-        streakStat.textContent = statistics.currentStreak.toLocaleString("zh-CN");
+        renderStatValue(streakStat, formatDays(statistics.currentStreak));
       }
     }
 
@@ -198,6 +214,7 @@
       if (nextDateKey === currentDateKey) return;
 
       currentDateKey = nextDateKey;
+      timer.resetForNewDay();
       global.FocusCoreEnergy?.checkDecay();
       persistState();
       syncEnergyCore();
