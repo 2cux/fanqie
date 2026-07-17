@@ -12,6 +12,10 @@ vm.runInContext(
 );
 const { mapEnergyToVisuals } = context.FocusCoreEnergyVisual;
 
+test("核心默认只使用少量粒子", () => {
+  assert.equal(mapEnergyToVisuals(10).particlePresence.length, 8);
+});
+
 test("Energy 的视觉信号连续且单调增长", () => {
   const samples = [0, 1, 10, 99, 100, 101, 1_000, 10_000].map((energy) =>
     mapEnergyToVisuals(energy),

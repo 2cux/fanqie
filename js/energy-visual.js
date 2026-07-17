@@ -18,7 +18,7 @@
     return progress * progress * (3 - 2 * progress);
   }
 
-  function mapEnergyToVisuals(energy, particleCount = 12) {
+  function mapEnergyToVisuals(energy, particleCount = 8) {
     const safeEnergy = Math.max(0, Number(energy) || 0);
     const intensity = saturatingGrowth(safeEnergy, 0.22);
     const range = saturatingGrowth(safeEnergy, 0.15);

@@ -50,6 +50,9 @@
     }
 
     const timer = new FocusTimer();
+    const motionController = global.FocusCoreMotion
+      ? new global.FocusCoreMotion.FocusMotionController(document)
+      : null;
     let heatmap = null;
     let timerUpdateId = null;
     let noticeTimeoutId = null;
@@ -201,6 +204,9 @@
       if (document.body.dataset.focusState !== timer.state) {
         document.body.dataset.focusState = timer.state;
       }
+      if (motionController?.state !== timer.state) {
+        motionController.setState(timer.state, motionController.state === null);
+      }
     }
 
     function stopTimerUpdates() {
@@ -289,11 +295,13 @@
       dailyMaintenanceId = null;
       creditCompletedMinutes(Date.now(), false);
       global.FocusCoreStorage.persist();
+      motionController?.destroy();
     };
     global.addEventListener("pagehide", flushBeforeClose);
     global.addEventListener("pageshow", () => {
       refreshForNewDay();
       render();
+      motionController?.setState(timer.state, true);
       scheduleTimerUpdate();
       scheduleDailyMaintenance();
     });
