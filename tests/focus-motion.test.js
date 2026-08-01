@@ -85,3 +85,91 @@ test("does not start an animation frame when there are no managed animations", (
   assert.equal(frameRequests, 0);
   assert.equal(controller.frameId, null);
 });
+
+test("does not refresh when managed animations already use the target rate", () => {
+  let frameRequests = 0;
+  const animation = {
+    animationName: "particle-orbit",
+    playbackRate: STATE_RATES.running.core,
+  };
+  const controller = new FocusMotionController(
+    { getAnimations: () => [animation] },
+    {
+      requestFrame: () => {
+        frameRequests += 1;
+        return 1;
+      },
+      cancelFrame() {},
+    },
+  );
+
+  controller.setState("running");
+  controller.setState("running");
+
+  assert.equal(frameRequests, 0);
+  assert.equal(controller.frameId, null);
+});
+
+test("a replacement transition cancels the pending frame and invalidates its callback", () => {
+  const callbacks = [];
+  const cancelledFrames = [];
+  const animation = {
+    animationName: "particle-orbit",
+    playbackRate: STATE_RATES.idle.core,
+    updatePlaybackRate(rate) {
+      this.playbackRate = rate;
+    },
+  };
+  const controller = new FocusMotionController(
+    { getAnimations: () => [animation] },
+    {
+      duration: 1000,
+      now: () => 0,
+      requestFrame: (callback) => {
+        callbacks.push(callback);
+        return callbacks.length;
+      },
+      cancelFrame: (frameId) => cancelledFrames.push(frameId),
+    },
+  );
+
+  controller.setState("running");
+  const staleCallback = callbacks[0];
+  controller.setState("paused");
+  const requestsBeforeStaleTick = callbacks.length;
+  staleCallback(500);
+
+  assert.deepEqual(cancelledFrames, [1]);
+  assert.equal(callbacks.length, requestsBeforeStaleTick);
+});
+
+test("destroy cancels the pending frame and prevents stale callbacks from continuing", () => {
+  const callbacks = [];
+  const cancelledFrames = [];
+  const animation = {
+    animationName: "particle-orbit",
+    playbackRate: STATE_RATES.idle.core,
+  };
+  const controller = new FocusMotionController(
+    { getAnimations: () => [animation] },
+    {
+      duration: 1000,
+      now: () => 0,
+      requestFrame: (callback) => {
+        callbacks.push(callback);
+        return callbacks.length;
+      },
+      cancelFrame: (frameId) => cancelledFrames.push(frameId),
+    },
+  );
+
+  controller.setState("running");
+  const staleCallback = callbacks[0];
+  controller.destroy();
+  staleCallback(500);
+
+  assert.deepEqual(cancelledFrames, [1]);
+  assert.equal(callbacks.length, 1);
+  assert.equal(controller.frameId, null);
+  assert.equal(controller.state, null);
+});

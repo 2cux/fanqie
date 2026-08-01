@@ -8,7 +8,7 @@
   });
 
   const AMBIENT_ANIMATIONS = new Set([
-    "ambient-gradient-breathe",
+    "ambient-gradient-drift",
     "ambient-light-drift-one",
     "ambient-light-drift-two",
     "ambient-flow-drift",
@@ -53,6 +53,7 @@
       this.now = options.now ?? (() => global.performance.now());
       this.frameId = null;
       this.state = null;
+      this.transitionVersion = 0;
     }
 
     getAnimations() {
@@ -70,10 +71,9 @@
           from: Number(animation.playbackRate) || 1,
           to: getAnimationRate(animation, rates),
         }))
-        .filter(({ to }) => to !== null);
+        .filter(({ from, to }) => to !== null && from !== to);
 
-      if (this.frameId !== null) this.cancelFrame(this.frameId);
-      this.frameId = null;
+      this.stopTransition();
       this.state = state;
 
       if (targets.length === 0) return;
@@ -84,7 +84,10 @@
       }
 
       const startedAt = this.now();
+      const transitionVersion = this.transitionVersion;
       const tick = (timestamp) => {
+        if (transitionVersion !== this.transitionVersion) return;
+
         const progress = Math.min(1, (timestamp - startedAt) / this.duration);
         const eased = easeInOutCubic(progress);
         targets.forEach(({ animation, from, to }) => {
@@ -101,6 +104,12 @@
       this.frameId = this.requestFrame(tick);
     }
 
+    stopTransition() {
+      this.transitionVersion += 1;
+      if (this.frameId !== null) this.cancelFrame(this.frameId);
+      this.frameId = null;
+    }
+
     updateRate(animation, rate) {
       if (typeof animation.updatePlaybackRate === "function") {
         animation.updatePlaybackRate(rate);
@@ -110,8 +119,8 @@
     }
 
     destroy() {
-      if (this.frameId !== null) this.cancelFrame(this.frameId);
-      this.frameId = null;
+      this.stopTransition();
+      this.state = null;
     }
   }
 

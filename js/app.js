@@ -29,6 +29,8 @@
       .join(":");
   }
 
+  const APP_LIFECYCLE_KEY = "__focusCoreAppLifecycle";
+
   function initApp() {
     const display = document.querySelector("[data-timer-display]");
     const status = document.querySelector("[data-timer-status]");
@@ -62,6 +64,13 @@
     let dailyMaintenanceId = null;
     let currentDateKey = getLocalDateKey();
     let renderedEnergy = null;
+    const listeners = [];
+    let destroyed = false;
+
+    function addListener(target, type, handler) {
+      target.addEventListener(type, handler);
+      listeners.push(() => target.removeEventListener(type, handler));
+    }
 
     function getLocalDateKey(date = new Date()) {
       const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -329,7 +338,7 @@
       scheduleMinuteSettlement();
     }
 
-    actionButton.addEventListener("click", () => {
+    const handleActionClick = () => {
       if (timer.state === TIMER_STATES.IDLE) {
         timer.start();
         persistState();
@@ -345,9 +354,10 @@
 
       const elapsedSeconds = render();
       syncTimerSchedules(elapsedSeconds);
-    });
+    };
+    addListener(actionButton, "click", handleActionClick);
 
-    document.addEventListener("visibilitychange", () => {
+    const handleVisibilityChange = () => {
       document.body.dataset.pageVisible = String(!document.hidden);
       if (!document.hidden) {
         refreshForNewDay();
@@ -363,7 +373,8 @@
         persistState();
         motionController?.destroy();
       }
-    });
+    };
+    addListener(document, "visibilitychange", handleVisibilityChange);
     const flushBeforeClose = () => {
       stopTimerUpdates();
       stopMinuteSettlements();
@@ -373,24 +384,19 @@
       global.FocusCoreStorage.persist();
       motionController?.destroy();
     };
-    global.addEventListener("pagehide", flushBeforeClose);
-    global.addEventListener("pageshow", () => {
-      refreshForNewDay();
-      const elapsedSeconds = render();
-      motionController?.setState(timer.state, true);
-      syncTimerSchedules(elapsedSeconds);
-      scheduleDailyMaintenance();
-    });
-    global.addEventListener("focuscore:statisticschange", (event) => {
+
+    const handleStatisticsChange = (event) => {
       syncStatistics(event.detail);
-    });
-    global.addEventListener("focuscore:energychange", syncEnergyCore);
-    global.addEventListener("focuscore:datacleared", () => {
+    };
+    addListener(global, "focuscore:statisticschange", handleStatisticsChange);
+    addListener(global, "focuscore:energychange", syncEnergyCore);
+    const handleDataCleared = () => {
       syncEnergyCore();
       syncStatistics();
       heatmap?.render();
       showNotice("所有专注数据已清除。");
-    });
+    };
+    addListener(global, "focuscore:datacleared", handleDataCleared);
 
     document.body.dataset.pageVisible = String(!document.hidden);
     global.FocusCoreEnergy?.checkDecay();
@@ -401,7 +407,45 @@
     const elapsedSeconds = render();
     syncTimerSchedules(elapsedSeconds);
     scheduleDailyMaintenance();
+    return {
+      destroy() {
+        if (destroyed) return;
+        destroyed = true;
+        flushBeforeClose();
+        window.clearTimeout(persistenceCheckpointId);
+        window.clearTimeout(noticeTimeoutId);
+        persistenceCheckpointId = null;
+        noticeTimeoutId = null;
+        motionController?.destroy();
+        heatmap?.destroy();
+        listeners.splice(0).reverse().forEach((removeListener) => {
+          removeListener();
+        });
+      },
+    };
   }
 
-  initApp();
+  const lifecycle = global[APP_LIFECYCLE_KEY] ?? {
+    app: null,
+    bound: false,
+  };
+
+  function enterPage() {
+    if (lifecycle.app) return;
+    lifecycle.app = initApp();
+  }
+
+  function leavePage() {
+    lifecycle.app?.destroy();
+    lifecycle.app = null;
+  }
+
+  if (!lifecycle.bound) {
+    lifecycle.bound = true;
+    global.addEventListener("pageshow", enterPage);
+    global.addEventListener("pagehide", leavePage);
+  }
+
+  global[APP_LIFECYCLE_KEY] = lifecycle;
+  enterPage();
 })(window);

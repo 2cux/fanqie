@@ -41,19 +41,27 @@ body {
   inset: 0;
   overflow: hidden;
   pointer-events: none;
-  background:
-    radial-gradient(ellipse at 48% 18%, rgba(79, 108, 87, 0.13), transparent 48%),
-    radial-gradient(ellipse at 12% 74%, rgba(45, 74, 58, 0.09), transparent 44%),
-    linear-gradient(145deg, #111a16 0%, #0c1511 48%, #09110e 100%);
-  background-position: 50% 0%, 0% 60%, center;
-  background-size: 120% 120%, 130% 130%, 100% 100%;
-  animation: ambient-gradient-breathe 36s cubic-bezier(0.45, 0.05, 0.55, 0.95)
-    infinite alternate;
+  background: linear-gradient(145deg, #111a16 0%, #0c1511 48%, #09110e 100%);
   contain: strict;
   opacity: 0.82;
   filter: brightness(0.94) saturate(0.92);
   transition: opacity 1500ms cubic-bezier(0.65, 0, 0.35, 1),
     filter 1500ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* Keep the gradient rasterized; animate only the composited layer. */
+.ambient-gradient-layer {
+  position: absolute;
+  z-index: 0;
+  inset: -10%;
+  display: block;
+  background:
+    radial-gradient(ellipse at 48% 18%, rgba(79, 108, 87, 0.13), transparent 48%),
+    radial-gradient(ellipse at 12% 74%, rgba(45, 74, 58, 0.09), transparent 44%);
+  background-size: 120% 120%, 130% 130%;
+  animation: ambient-gradient-drift 36s cubic-bezier(0.45, 0.05, 0.55, 0.95)
+    infinite alternate;
+  will-change: transform;
 }
 
 .ambient-background::before,
@@ -314,15 +322,15 @@ body[data-focus-state="paused"] .ambient-particles i {
   opacity: 0.09;
 }
 
-@keyframes ambient-gradient-breathe {
+@keyframes ambient-gradient-drift {
   0% {
-    background-position: 46% 0%, 0% 58%, center;
+    transform: translate3d(-2%, 0, 0);
   }
   42% {
-    background-position: 52% 4%, 3% 54%, center;
+    transform: translate3d(0, 2%, 0);
   }
   100% {
-    background-position: 58% 8%, 7% 48%, center;
+    transform: translate3d(2%, 4%, 0);
   }
 }
 
@@ -956,16 +964,18 @@ body[data-page-visible="false"] .energy-core::after {
 
 .core-particles {
   z-index: 3;
+  container-type: size;
   opacity: 0.72;
   transform: scale(calc(0.9 + var(--energy-range) * 0.18));
   transition: transform 900ms ease;
+  contain: layout paint;
 }
 
 .core-particles i {
   --particle-size: 2.5px;
   --particle-presence: 0;
-  --orbit-radius: 38%;
-  --gather-radius: 27%;
+  --orbit-radius: 38cqw;
+  --gather-radius: 27cqw;
   --orbit-duration: 28s;
   --gather-duration: 8s;
   --orbit-start: 0deg;
@@ -981,7 +991,7 @@ body[data-page-visible="false"] .energy-core::after {
 .core-particles i::before {
   position: absolute;
   top: 50%;
-  left: calc(50% + var(--orbit-radius));
+  left: 50%;
   width: var(--particle-size);
   height: var(--particle-size);
   content: "";
@@ -989,55 +999,55 @@ body[data-page-visible="false"] .energy-core::after {
   background: radial-gradient(circle, rgba(220, 243, 223, 0.68), rgba(155, 215, 174, 0.26) 48%, transparent 76%);
   box-shadow: 0 0 5px rgba(132, 205, 157, 0.22);
   filter: blur(0.25px);
-  transform: translate(-50%, -50%) scale(0.88);
+  transform: translate3d(calc(var(--orbit-radius) - 50%), -50%, 0) scale(0.88);
   animation: particle-gather var(--gather-duration) ease-in-out infinite;
   animation-delay: var(--gather-delay, 0s);
   will-change: opacity, transform;
 }
 
 .core-particles i:nth-child(1) {
-  --orbit-radius: 41%; --gather-radius: 25%; --orbit-duration: 31s;
+  --orbit-radius: 41cqw; --gather-radius: 25cqw; --orbit-duration: 31s;
   --gather-duration: 9s; --orbit-start: 18deg; --gather-delay: -2s;
 }
 
 .core-particles i:nth-child(2) {
-  --orbit-radius: 34%; --gather-radius: 23%; --orbit-duration: 25s;
+  --orbit-radius: 34cqw; --gather-radius: 23cqw; --orbit-duration: 25s;
   --gather-duration: 7.5s; --orbit-start: 91deg; --orbit-delay: -8s;
   --gather-delay: -5s; --particle-size: 1.8px;
 }
 
 .core-particles i:nth-child(3) {
-  --orbit-radius: 46%; --gather-radius: 29%; --orbit-duration: 36s;
+  --orbit-radius: 46cqw; --gather-radius: 29cqw; --orbit-duration: 36s;
   --gather-duration: 10.5s; --orbit-start: 157deg; --orbit-delay: -17s;
   --gather-delay: -7s; --particle-size: 3px;
 }
 
 .core-particles i:nth-child(4) {
-  --orbit-radius: 29%; --gather-radius: 20%; --orbit-duration: 23s;
+  --orbit-radius: 29cqw; --gather-radius: 20cqw; --orbit-duration: 23s;
   --gather-duration: 8.5s; --orbit-start: 224deg; --orbit-delay: -4s;
   --gather-delay: -1s; --particle-size: 1.6px;
 }
 
 .core-particles i:nth-child(5) {
-  --orbit-radius: 43%; --gather-radius: 31%; --orbit-duration: 33s;
+  --orbit-radius: 43cqw; --gather-radius: 31cqw; --orbit-duration: 33s;
   --gather-duration: 11s; --orbit-start: 278deg; --orbit-delay: -22s;
   --gather-delay: -4s; --particle-size: 2.2px;
 }
 
 .core-particles i:nth-child(6) {
-  --orbit-radius: 37%; --gather-radius: 22%; --orbit-duration: 27s;
+  --orbit-radius: 37cqw; --gather-radius: 22cqw; --orbit-duration: 27s;
   --gather-duration: 9.5s; --orbit-start: 331deg; --orbit-delay: -13s;
   --gather-delay: -8s; --particle-size: 1.7px;
 }
 
 .core-particles i:nth-child(7) {
-  --orbit-radius: 48%; --gather-radius: 33%; --orbit-duration: 39s;
+  --orbit-radius: 48cqw; --gather-radius: 33cqw; --orbit-duration: 39s;
   --gather-duration: 12s; --orbit-start: 53deg; --orbit-delay: -29s;
   --gather-delay: -6s; --particle-size: 2px;
 }
 
 .core-particles i:nth-child(8) {
-  --orbit-radius: 31%; --gather-radius: 19%; --orbit-duration: 29s;
+  --orbit-radius: 31cqw; --gather-radius: 19cqw; --orbit-duration: 29s;
   --gather-duration: 8s; --orbit-start: 196deg; --orbit-delay: -20s;
   --gather-delay: -3s; --particle-size: 1.5px;
 }
@@ -1219,32 +1229,27 @@ body[data-page-visible="false"] .energy-core::after {
 
 @keyframes particle-gather {
   0%, 100% {
-    left: calc(50% + var(--orbit-radius));
     opacity: 0.52;
-    transform: translate(-50%, -50%) scale(0.8);
+    transform: translate3d(calc(var(--orbit-radius) - 50%), -50%, 0) scale(0.8);
   }
   46% {
-    left: calc(50% + var(--gather-radius));
     opacity: 0.9;
-    transform: translate(-50%, -50%) scale(1.04);
+    transform: translate3d(calc(var(--gather-radius) - 50%), -50%, 0) scale(1.04);
   }
   68% {
-    left: calc(50% + var(--gather-radius));
     opacity: 0.68;
-    transform: translate(-50%, -50%) scale(0.9);
+    transform: translate3d(calc(var(--gather-radius) - 50%), -50%, 0) scale(0.9);
   }
 }
 
 @keyframes particle-settle {
   0%, 100% {
-    left: calc(50% + var(--orbit-radius));
     opacity: 0.34;
-    transform: translate(-50%, -50%) scale(0.78);
+    transform: translate3d(calc(var(--orbit-radius) - 50%), -50%, 0) scale(0.78);
   }
   50% {
-    left: calc(50% + var(--orbit-radius));
     opacity: 0.46;
-    transform: translate(-50%, -50%) scale(0.88);
+    transform: translate3d(calc(var(--orbit-radius) - 50%), -50%, 0) scale(0.88);
   }
 }
 
