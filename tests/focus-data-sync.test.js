@@ -157,6 +157,39 @@ test("页面意外退出后可由已保存的开始时间恢复未结算分钟",
   assert.equal(context.FocusCoreStorage.loadTimer().creditedMinutes, 1);
 });
 
+test("批量持久化前意外退出不会丢失已结算的分钟", () => {
+  const firstRuntime = createRuntime();
+  const firstTimer = new firstRuntime.context.FocusCoreTimer.FocusTimer();
+  const startedAt = Date.now() - 2 * 60_000;
+  firstTimer.start(startedAt);
+  firstRuntime.context.FocusCoreStorage.persist();
+  const writesAfterStart = firstRuntime.getWriteCount();
+
+  const completedMinutes = firstTimer.getUncreditedMinutes(Date.now());
+  firstRuntime.context.FocusCoreStatistics.recordFocusMinutes(completedMinutes);
+  firstRuntime.context.FocusCoreEnergy.addEnergy(completedMinutes);
+  firstTimer.markMinutesCredited(completedMinutes);
+
+  assert.equal(firstRuntime.getWriteCount(), writesAfterStart);
+  assert.equal(firstRuntime.context.FocusCoreStatistics.getStatistics().totalFocusMinutes, 2);
+
+  const recoveredRuntime = createRuntime(firstRuntime.values);
+  const recoveredTimer = new recoveredRuntime.context.FocusCoreTimer.FocusTimer();
+  const recoveredMinutes = recoveredTimer.getUncreditedMinutes(Date.now());
+  assert.equal(recoveredMinutes, 2);
+
+  recoveredRuntime.context.FocusCoreStatistics.recordFocusMinutes(recoveredMinutes);
+  recoveredRuntime.context.FocusCoreEnergy.addEnergy(recoveredMinutes);
+  recoveredTimer.markMinutesCredited(recoveredMinutes);
+  recoveredRuntime.context.FocusCoreStorage.persist();
+
+  assert.equal(
+    recoveredRuntime.context.FocusCoreStatistics.getStatistics().totalFocusMinutes,
+    2,
+  );
+  assert.equal(recoveredRuntime.context.FocusCoreEnergy.getEnergy(), 2);
+});
+
 test("same-day reload restores the saved timer snapshot", () => {
   const values = new Map([
     [

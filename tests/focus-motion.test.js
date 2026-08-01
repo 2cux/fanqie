@@ -66,3 +66,22 @@ test("transition easing is continuous and bounded", () => {
   assert.equal(easeInOutCubic(0.5), 0.5);
   assert.ok(easeInOutCubic(0.49) < easeInOutCubic(0.51));
 });
+
+test("does not start an animation frame when there are no managed animations", () => {
+  let frameRequests = 0;
+  const controller = new FocusMotionController(
+    { getAnimations: () => [] },
+    {
+      requestFrame: () => {
+        frameRequests += 1;
+        return 1;
+      },
+      cancelFrame() {},
+    },
+  );
+
+  controller.setState("running");
+
+  assert.equal(frameRequests, 0);
+  assert.equal(controller.frameId, null);
+});

@@ -537,6 +537,7 @@ button:focus-visible {
 body[data-page-visible="false"] .ambient-background *,
 body[data-page-visible="false"] .ambient-background::before,
 body[data-page-visible="false"] .ambient-background::after,
+body[data-page-visible="false"] .ambient-particles i,
 body[data-page-visible="false"] .energy-core *,
 body[data-page-visible="false"] .energy-core::before,
 body[data-page-visible="false"] .energy-core::after {
@@ -1094,13 +1095,20 @@ body[data-page-visible="false"] .energy-core::after {
   letter-spacing: 0.34em;
 }
 
-.energy-core__inner strong {
+.energy-number {
+  display: grid;
+  width: 5ch;
+  height: 1em;
+  place-items: center;
   margin: 12px 0 9px;
   color: #f4f4e9;
   font-family: Georgia, "Times New Roman", serif;
   font-size: 3.15rem;
   font-weight: 400;
   line-height: 1;
+  white-space: nowrap;
+  font-variant-numeric: lining-nums tabular-nums;
+  font-feature-settings: "lnum" 1, "tnum" 1;
   text-shadow: 0 1px 18px rgba(24, 43, 32, 0.5), 0 0 8px rgba(242, 246, 226, 0.16);
 }
 

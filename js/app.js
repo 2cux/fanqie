@@ -4,6 +4,7 @@
   /** 页面协调层：连接计时、统计、Energy 与视图，不承载数据规则。 */
   const { FocusTimer, TIMER_STATES } = global.FocusCoreTimer;
   const { formatDuration, formatDays } = global.FocusCoreFormatters;
+  const PERSISTENCE_CHECKPOINT_MS = 5 * 60 * 1000;
 
   const STATUS_TEXT = Object.freeze({
     [TIMER_STATES.IDLE]: "静候开始",
@@ -55,9 +56,12 @@
       : null;
     let heatmap = null;
     let timerUpdateId = null;
+    let minuteSettlementId = null;
+    let persistenceCheckpointId = null;
     let noticeTimeoutId = null;
     let dailyMaintenanceId = null;
     let currentDateKey = getLocalDateKey();
+    let renderedEnergy = null;
 
     function getLocalDateKey(date = new Date()) {
       const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -124,6 +128,8 @@
       if (!energyCore || !energyValue || !global.FocusCoreEnergy) return;
 
       const energy = Math.max(0, global.FocusCoreEnergy.getEnergy());
+      if (renderedEnergy === energy) return;
+
       const visuals = global.FocusCoreEnergyVisual?.mapEnergyToVisuals(
         energy,
         energyParticles.length,
@@ -140,6 +146,7 @@
         );
       });
       energyCore.setAttribute("aria-label", `能量核心，当前能量 ${energy}`);
+      renderedEnergy = energy;
     }
 
     if (heatmapContainer && global.FocusCoreHeatmap) {
@@ -152,6 +159,10 @@
     }
 
     function persistState() {
+      if (persistenceCheckpointId !== null) {
+        window.clearTimeout(persistenceCheckpointId);
+        persistenceCheckpointId = null;
+      }
       const saved = global.FocusCoreStorage.persist();
       if (!saved) {
         showNotice("专注数据保存失败，请检查浏览器存储权限。", "error");
@@ -159,7 +170,19 @@
       return saved;
     }
 
-    function creditCompletedMinutes(now = Date.now(), shouldPersist = true) {
+    function schedulePersistenceCheckpoint() {
+      if (persistenceCheckpointId !== null) return;
+
+      persistenceCheckpointId = window.setTimeout(() => {
+        persistenceCheckpointId = null;
+        persistState();
+      }, PERSISTENCE_CHECKPOINT_MS);
+    }
+
+    function creditCompletedMinutes(
+      now = Date.now(),
+      shouldSchedulePersistence = true,
+    ) {
       if (!global.FocusCoreStatistics || !global.FocusCoreEnergy) return;
 
       const uncreditedMinutes = timer.getUncreditedMinutes(now);
@@ -182,21 +205,28 @@
       }
 
       timer.markMinutesCredited(uncreditedMinutes, now);
-      if (shouldPersist) persistState();
+      if (shouldSchedulePersistence) schedulePersistenceCheckpoint();
 
-      heatmap?.render();
+      heatmap?.updateDate(new Date(now));
       return true;
     }
 
-    function render() {
-      const elapsedSeconds = timer.getElapsedSeconds();
+    function renderTimer(now = Date.now()) {
+      const previousState = timer.state;
+      const elapsedSeconds = timer.getElapsedSeconds(now);
       const displayText = formatElapsedTime(elapsedSeconds);
       const dateTime = `PT${Math.floor(elapsedSeconds)}S`;
-      const statusText = STATUS_TEXT[timer.state];
-      const actionText = ACTION_TEXT[timer.state];
 
       if (display.textContent !== displayText) display.textContent = displayText;
       if (display.dateTime !== dateTime) display.dateTime = dateTime;
+      if (timer.state !== previousState) renderState();
+      return elapsedSeconds;
+    }
+
+    function renderState() {
+      const statusText = STATUS_TEXT[timer.state];
+      const actionText = ACTION_TEXT[timer.state];
+
       if (status.textContent !== statusText) status.textContent = statusText;
       if (actionButton.textContent !== actionText) {
         actionButton.textContent = actionText;
@@ -218,10 +248,22 @@
       }
     }
 
+    function render(now = Date.now()) {
+      const elapsedSeconds = renderTimer(now);
+      renderState();
+      return elapsedSeconds;
+    }
+
     function stopTimerUpdates() {
       if (timerUpdateId === null) return;
       window.clearTimeout(timerUpdateId);
       timerUpdateId = null;
+    }
+
+    function stopMinuteSettlements() {
+      if (minuteSettlementId === null) return;
+      window.clearTimeout(minuteSettlementId);
+      minuteSettlementId = null;
     }
 
     function refreshForNewDay() {
@@ -252,20 +294,39 @@
       }, nextDay.getTime() - now.getTime() + 1000);
     }
 
-    function scheduleTimerUpdate() {
+    function scheduleTimerUpdate(elapsedSeconds = timer.getElapsedSeconds()) {
       stopTimerUpdates();
       if (timer.state !== TIMER_STATES.RUNNING || document.hidden) return;
 
-      const elapsedMilliseconds = timer.getElapsedSeconds() * 1000;
+      const elapsedMilliseconds = elapsedSeconds * 1000;
       const nextSecondDelay =
         1000 - (elapsedMilliseconds % 1000) + 16;
 
       timerUpdateId = window.setTimeout(() => {
         timerUpdateId = null;
-        creditCompletedMinutes(Date.now());
-        render();
-        scheduleTimerUpdate();
+        const nextElapsedSeconds = renderTimer();
+        scheduleTimerUpdate(nextElapsedSeconds);
       }, nextSecondDelay);
+    }
+
+    function scheduleMinuteSettlement() {
+      stopMinuteSettlements();
+      if (timer.state !== TIMER_STATES.RUNNING || document.hidden) return;
+
+      const elapsedMilliseconds = timer.getElapsedSeconds() * 1000;
+      const nextMinuteDelay =
+        60_000 - (elapsedMilliseconds % 60_000) + 16;
+
+      minuteSettlementId = window.setTimeout(() => {
+        minuteSettlementId = null;
+        creditCompletedMinutes(Date.now());
+        scheduleMinuteSettlement();
+      }, nextMinuteDelay);
+    }
+
+    function syncTimerSchedules(elapsedSeconds) {
+      scheduleTimerUpdate(elapsedSeconds);
+      scheduleMinuteSettlement();
     }
 
     actionButton.addEventListener("click", () => {
@@ -282,8 +343,8 @@
         persistState();
       }
 
-      render();
-      scheduleTimerUpdate();
+      const elapsedSeconds = render();
+      syncTimerSchedules(elapsedSeconds);
     });
 
     document.addEventListener("visibilitychange", () => {
@@ -292,14 +353,20 @@
         refreshForNewDay();
         creditCompletedMinutes(Date.now());
         syncEnergyCore();
-        render();
-        scheduleTimerUpdate();
+        const elapsedSeconds = render();
+        motionController?.setState(timer.state, true);
+        syncTimerSchedules(elapsedSeconds);
       } else {
         stopTimerUpdates();
+        stopMinuteSettlements();
+        creditCompletedMinutes(Date.now(), false);
+        persistState();
+        motionController?.destroy();
       }
     });
     const flushBeforeClose = () => {
       stopTimerUpdates();
+      stopMinuteSettlements();
       window.clearTimeout(dailyMaintenanceId);
       dailyMaintenanceId = null;
       creditCompletedMinutes(Date.now(), false);
@@ -309,9 +376,9 @@
     global.addEventListener("pagehide", flushBeforeClose);
     global.addEventListener("pageshow", () => {
       refreshForNewDay();
-      render();
+      const elapsedSeconds = render();
       motionController?.setState(timer.state, true);
-      scheduleTimerUpdate();
+      syncTimerSchedules(elapsedSeconds);
       scheduleDailyMaintenance();
     });
     global.addEventListener("focuscore:statisticschange", (event) => {
@@ -331,8 +398,8 @@
     persistState();
     syncEnergyCore();
     syncStatistics();
-    render();
-    scheduleTimerUpdate();
+    const elapsedSeconds = render();
+    syncTimerSchedules(elapsedSeconds);
     scheduleDailyMaintenance();
   }
 

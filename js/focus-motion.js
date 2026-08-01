@@ -76,6 +76,8 @@
       this.frameId = null;
       this.state = state;
 
+      if (targets.length === 0) return;
+
       if (immediate || this.duration <= 0) {
         targets.forEach(({ animation, to }) => this.updateRate(animation, to));
         return;

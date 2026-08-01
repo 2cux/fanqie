@@ -257,6 +257,27 @@
       return this;
     }
 
+    updateDate(date = new Date(), records = this.dataProvider()) {
+      const normalizedDate = normalizeReferenceDate(date);
+      const dateKey = formatDateKey(normalizedDate);
+      const cell = this.cells.get(dateKey);
+      if (!cell) return this.render(records);
+
+      const safeRecords =
+        records !== null && typeof records === "object" ? records : {};
+      const minutes = getFocusMinutes(safeRecords[dateKey]);
+      const level = getEnergyLevel(minutes);
+      const duration = formatDuration(minutes);
+      const nextClassName = `heatmap__cell heatmap__cell--level-${level}`;
+
+      if (cell.className !== nextClassName) cell.className = nextClassName;
+      if (cell.dataset.duration !== duration) {
+        cell.dataset.duration = duration;
+        cell.setAttribute("aria-label", `${dateKey}，专注 ${duration}`);
+      }
+      return this;
+    }
+
     destroy() {
       this.container.replaceChildren();
       this.cells.clear();
