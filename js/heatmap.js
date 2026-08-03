@@ -19,11 +19,15 @@
     "12月",
   ];
   const ENERGY_LEVELS = [
-    { level: 0, label: "0", description: "0 min" },
-    { level: 1, label: "1–30", description: "低能量，1 min–30 min" },
-    { level: 2, label: "31–60", description: "中等能量，31 min–1 h 00 min" },
-    { level: 3, label: "61–179", description: "高能量，1 h 01 min–2 h 59 min" },
-    { level: 4, label: "≥180", description: "强能量，3 h 00 min 以上" },
+    { level: 0, description: "0分钟：未专注" },
+    { level: 1, description: "1–29分钟" },
+    { level: 2, description: "30–59分钟" },
+    { level: 3, description: "60–119分钟" },
+    { level: 4, description: "120–239分钟" },
+    { level: 5, description: "240–359分钟" },
+    { level: 6, description: "360–479分钟" },
+    { level: 7, description: "480–599分钟" },
+    { level: 8, description: "600分钟及以上" },
   ];
 
   function formatDateKey(date) {
@@ -57,10 +61,14 @@
 
   function getEnergyLevel(minutes) {
     if (minutes <= 0) return 0;
-    if (minutes <= 30) return 1;
-    if (minutes <= 60) return 2;
-    if (minutes < 180) return 3;
-    return 4;
+    if (minutes < 30) return 1;
+    if (minutes < 60) return 2;
+    if (minutes < 120) return 3;
+    if (minutes < 240) return 4;
+    if (minutes < 360) return 5;
+    if (minutes < 480) return 6;
+    if (minutes < 600) return 7;
+    return 8;
   }
 
   class FocusHeatmap {
@@ -186,20 +194,29 @@
         }
       }
 
-      const legendTitle = document.createElement("span");
-      legendTitle.className = "heatmap__legend-title";
-      legendTitle.textContent = "专注时长";
-      footer.append(legendTitle);
-      ENERGY_LEVELS.forEach(({ level, label, description }) => {
+      footer.setAttribute("aria-label", "专注时长由少到多");
+
+      const legendLess = document.createElement("span");
+      legendLess.className = "heatmap__legend-label";
+      legendLess.textContent = "少";
+      footer.append(legendLess);
+
+      ENERGY_LEVELS.slice(1).forEach(({ level, description }) => {
         const item = document.createElement("span");
         const swatch = document.createElement("span");
         item.className = "heatmap__legend-item";
-        item.title = description;
+        item.setAttribute("role", "img");
+        item.setAttribute("aria-label", description);
         swatch.className = `heatmap__legend-cell heatmap__cell--level-${level}`;
         swatch.setAttribute("aria-hidden", "true");
-        item.append(swatch, label);
+        item.append(swatch);
         footer.append(item);
       });
+
+      const legendMore = document.createElement("span");
+      legendMore.className = "heatmap__legend-label";
+      legendMore.textContent = "多";
+      footer.append(legendMore);
 
       let activeCell = null;
       let containerRect = null;
