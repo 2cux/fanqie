@@ -36,17 +36,30 @@
           </div>
         </div>
 
-        <button
-          class="icon-button"
-          data-settings-open
-          type="button"
-          aria-label="打开设置"
-          aria-controls="settings-dialog"
-          aria-expanded="false"
-          title="设置"
-        >
-          <span aria-hidden="true">◌</span>
-        </button>
+        <div class="header-actions">
+          <button
+            class="share-trigger"
+            data-share-open
+            type="button"
+            aria-label="打开每日分享"
+            aria-controls="share-dialog"
+            aria-expanded="false"
+          >
+            <span class="share-trigger__dot" aria-hidden="true"></span>
+            <span>分享</span>
+          </button>
+          <button
+            class="icon-button"
+            data-settings-open
+            type="button"
+            aria-label="打开设置"
+            aria-controls="settings-dialog"
+            aria-expanded="false"
+            title="设置"
+          >
+            <span aria-hidden="true">◌</span>
+          </button>
+        </div>
       </header>
 
       <main class="app-main">
@@ -189,6 +202,102 @@
 
     <div class="app-notice" data-app-notice role="status" aria-live="polite" hidden></div>
 
+    <dialog class="share-dialog" id="share-dialog" aria-labelledby="share-title">
+      <div class="share-dialog__panel">
+        <header class="share-dialog__header">
+          <div>
+            <p class="eyebrow">DAILY MOMENT</p>
+            <h2 id="share-title">每日分享</h2>
+          </div>
+          <button
+            class="dialog-close"
+            data-share-close
+            type="button"
+            aria-label="关闭每日分享"
+          >×</button>
+        </header>
+
+        <div class="share-preview-frame">
+          <article
+            class="share-poster"
+            data-share-poster
+            aria-label="每日专注分享海报"
+          >
+            <div class="share-poster__nebula" aria-hidden="true"></div>
+            <div class="share-poster__particles" aria-hidden="true">
+              <i></i><i></i><i></i><i></i><i></i><i></i>
+            </div>
+            <div class="share-poster__ocean" aria-hidden="true">
+              <i class="share-poster__ocean-mountain share-poster__ocean-mountain--far"></i>
+              <i class="share-poster__ocean-mountain share-poster__ocean-mountain--near"></i>
+              <i class="share-poster__ocean-horizon"></i>
+              <i class="share-poster__ocean-reflection"></i>
+              <i class="share-poster__ocean-wave share-poster__ocean-wave--one"></i>
+              <i class="share-poster__ocean-wave share-poster__ocean-wave--two"></i>
+              <i class="share-poster__ocean-wave share-poster__ocean-wave--three"></i>
+              <i class="share-poster__ocean-wave share-poster__ocean-wave--four"></i>
+            </div>
+
+            <header class="share-poster__brand">
+              <span class="share-poster__logo" aria-hidden="true"><i></i></span>
+              <p class="share-poster__eyebrow">A QUIET PLACE</p>
+              <h3>静心一隅</h3>
+              <p class="share-poster__tagline">收拢微光 · 安住此刻</p>
+            </header>
+
+            <section class="share-poster__energy" aria-label="能量">
+              <p>ENERGY</p>
+              <strong data-poster-energy>0</strong>
+              <span>能量核心</span>
+            </section>
+
+            <section class="share-poster__today" aria-label="今日专注">
+              <p>TODAY FOCUS</p>
+              <strong data-poster-today>0 min</strong>
+            </section>
+
+            <div class="share-poster__rule" aria-hidden="true"><i></i></div>
+
+            <section class="share-poster__stats" aria-label="专注统计">
+              <div>
+                <p>WEEKLY FOCUS</p>
+                <strong data-poster-week>0 min</strong>
+              </div>
+              <div>
+                <p>TOTAL FOCUS</p>
+                <strong data-poster-total>0 min</strong>
+              </div>
+              <div>
+                <p>STREAK</p>
+                <strong data-poster-streak>0 days</strong>
+              </div>
+            </section>
+
+            <div class="share-poster__rule share-poster__rule--timer" aria-hidden="true"><i></i></div>
+
+            <section class="share-poster__timer" aria-label="当前沉浸时刻">
+              <p>沉浸此刻</p>
+              <time data-poster-timer>00:00:00</time>
+            </section>
+
+            <footer class="share-poster__footer">
+              <span aria-hidden="true"></span>
+              <p>Daily Focus Share</p>
+              <span aria-hidden="true"></span>
+            </footer>
+          </article>
+        </div>
+
+        <p class="share-feedback" data-share-feedback role="status"></p>
+        <div class="share-dialog__actions">
+          <button class="secondary-button" data-share-close type="button">关闭</button>
+          <button class="primary-button share-save-button" data-share-save type="button">
+            保存图片
+          </button>
+        </div>
+      </div>
+    </dialog>
+
     <dialog class="settings-dialog" id="settings-dialog" aria-labelledby="settings-title">
       <div class="settings-dialog__panel">
         <header class="settings-dialog__header">
@@ -258,6 +367,11 @@
     <script defer src="./js/focus-motion.js"></script>
     <script defer src="./js/heatmap.js"></script>
     <script defer src="./js/settings.js"></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"
+    ></script>
+    <script defer src="./js/share.js"></script>
     <script defer src="./js/app.js"></script>
   </body>
 </html>
