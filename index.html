@@ -227,15 +227,12 @@
             <div class="share-poster__particles" aria-hidden="true">
               <i></i><i></i><i></i><i></i><i></i><i></i>
             </div>
-            <div class="share-poster__ocean" aria-hidden="true">
-              <i class="share-poster__ocean-mountain share-poster__ocean-mountain--far"></i>
-              <i class="share-poster__ocean-mountain share-poster__ocean-mountain--near"></i>
-              <i class="share-poster__ocean-horizon"></i>
-              <i class="share-poster__ocean-reflection"></i>
-              <i class="share-poster__ocean-wave share-poster__ocean-wave--one"></i>
-              <i class="share-poster__ocean-wave share-poster__ocean-wave--two"></i>
-              <i class="share-poster__ocean-wave share-poster__ocean-wave--three"></i>
-              <i class="share-poster__ocean-wave share-poster__ocean-wave--four"></i>
+            <div class="share-poster__atmosphere" aria-hidden="true">
+              <i class="share-poster__atmosphere-glow"></i>
+              <i class="share-poster__atmosphere-reflection"></i>
+              <i class="share-poster__atmosphere-wave share-poster__atmosphere-wave--one"></i>
+              <i class="share-poster__atmosphere-wave share-poster__atmosphere-wave--two"></i>
+              <i class="share-poster__atmosphere-wave share-poster__atmosphere-wave--three"></i>
             </div>
 
             <header class="share-poster__brand">
@@ -246,14 +243,28 @@
             </header>
 
             <section class="share-poster__energy" aria-label="能量">
-              <p>ENERGY</p>
-              <strong data-poster-energy>0</strong>
-              <span>能量核心</span>
+              <div class="share-poster__core" aria-hidden="true">
+                <div class="share-poster__core-mist">
+                  <i></i><i></i><i></i>
+                </div>
+                <div class="share-poster__core-orbits">
+                  <i></i><i></i><i></i>
+                </div>
+                <div class="share-poster__core-particles">
+                  <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+                </div>
+                <i class="share-poster__core-spark"></i>
+                <div class="share-poster__core-reading">
+                  <p>ENERGY</p>
+                  <strong data-poster-energy>0</strong>
+                  <span>能量核心</span>
+                </div>
+              </div>
             </section>
 
             <section class="share-poster__today" aria-label="今日专注">
               <p>TODAY FOCUS</p>
-              <strong data-poster-today>0 min</strong>
+              <strong class="share-poster__measure" data-poster-today>0 min</strong>
             </section>
 
             <div class="share-poster__rule" aria-hidden="true"><i></i></div>
@@ -261,15 +272,15 @@
             <section class="share-poster__stats" aria-label="专注统计">
               <div>
                 <p>WEEKLY FOCUS</p>
-                <strong data-poster-week>0 min</strong>
+                <strong class="share-poster__measure" data-poster-week>0 min</strong>
               </div>
               <div>
                 <p>TOTAL FOCUS</p>
-                <strong data-poster-total>0 min</strong>
+                <strong class="share-poster__measure" data-poster-total>0 min</strong>
               </div>
               <div>
                 <p>STREAK</p>
-                <strong data-poster-streak>0 days</strong>
+                <strong class="share-poster__measure" data-poster-streak>0 days</strong>
               </div>
             </section>
 

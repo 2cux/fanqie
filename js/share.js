@@ -48,18 +48,43 @@
     if (element) element.textContent = value;
   }
 
+  function renderPosterMeasure(selector, formattedValue) {
+    const element = document.querySelector(selector);
+    if (!element) return;
+
+    const tokens = String(formattedValue).trim().split(/\s+/);
+    const fragments = [];
+
+    for (let index = 0; index < tokens.length; index += 2) {
+      const measure = document.createElement("span");
+      const number = document.createElement("span");
+      const unit = document.createElement("span");
+
+      measure.className = "share-poster__measure-pair";
+      number.className = "share-poster__number";
+      unit.className = "share-poster__unit";
+      number.textContent = tokens[index];
+      unit.textContent = tokens[index + 1] ?? "";
+      measure.append(number, unit);
+      fragments.push(measure);
+    }
+
+    element.replaceChildren(...fragments);
+    element.setAttribute("aria-label", formattedValue);
+  }
+
   function renderPoster(data = readShareData()) {
     setText("[data-poster-energy]", Math.floor(data.energy).toLocaleString("zh-CN"));
-    setText("[data-poster-today]", formatPosterDuration(data.todayFocusMinutes));
-    setText("[data-poster-week]", formatPosterDuration(data.weekFocusMinutes));
-    setText("[data-poster-total]", formatPosterDuration(data.totalFocusMinutes));
-    setText("[data-poster-streak]", formatPosterDays(data.currentStreak));
+    renderPosterMeasure("[data-poster-today]", formatPosterDuration(data.todayFocusMinutes));
+    renderPosterMeasure("[data-poster-week]", formatPosterDuration(data.weekFocusMinutes));
+    renderPosterMeasure("[data-poster-total]", formatPosterDuration(data.totalFocusMinutes));
+    renderPosterMeasure("[data-poster-streak]", formatPosterDays(data.currentStreak));
     setText("[data-poster-timer]", data.timer);
   }
 
   // html2canvas 可用时优先捕获 HTML/CSS 预览；离线或 CDN 被拦截时，
   // 使用同一组数据绘制一个独立的 9:16 画布，保证保存图片仍然可用。
-  function createFallbackPosterCanvas(data) {
+  function createLegacyFallbackPosterCanvas(data) {
     const canvas = document.createElement("canvas");
     canvas.width = 1080;
     canvas.height = 1920;
@@ -283,6 +308,261 @@
     drawCenteredText("沉浸此刻", 1575, "400 22px STSong, Songti SC, serif", "rgba(208, 229, 207, 0.56)");
     drawCenteredText(data.timer, 1680, "200 82px Avenir Next, Arial, sans-serif", "#f0f2e8");
     drawCenteredText("·  Daily Focus Share  ·", 1830, "500 18px Avenir Next, Arial, sans-serif", "rgba(184, 215, 185, 0.72)");
+
+    return canvas;
+  }
+
+  function createFallbackPosterCanvas(data) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1080;
+    canvas.height = 1920;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("当前浏览器不支持 Canvas 导出。");
+
+    const centerX = canvas.width / 2;
+    const drawCenteredText = (text, y, font, color) => {
+      context.font = font;
+      context.fillStyle = color;
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.fillText(text, centerX, y);
+    };
+    const drawMeasure = (text, y, numberFont, unitFont, numberColor, unitColor, xCenter = centerX) => {
+      const tokens = String(text).trim().split(/\s+/);
+      const pairs = [];
+      const pairGap = 8;
+      const measureGap = 18;
+
+      for (let index = 0; index < tokens.length; index += 2) {
+        const number = tokens[index];
+        const unit = tokens[index + 1] ?? "";
+        context.font = numberFont;
+        const numberWidth = context.measureText(number).width;
+        context.font = unitFont;
+        const unitWidth = context.measureText(unit).width;
+        pairs.push({ number, unit, numberWidth, unitWidth });
+      }
+
+      const totalWidth = pairs.reduce(
+        (sum, pair) => sum + pair.numberWidth + pairGap + pair.unitWidth,
+        0,
+      ) + Math.max(0, pairs.length - 1) * measureGap;
+      let x = xCenter - totalWidth / 2;
+
+      pairs.forEach((pair, index) => {
+        context.textAlign = "left";
+        context.textBaseline = "alphabetic";
+        context.font = numberFont;
+        context.fillStyle = numberColor;
+        context.fillText(pair.number, x, y);
+        x += pair.numberWidth + pairGap;
+        context.font = unitFont;
+        context.fillStyle = unitColor;
+        context.fillText(pair.unit, x, y);
+        x += pair.unitWidth;
+        if (index < pairs.length - 1) x += measureGap;
+      });
+    };
+    const drawSoftRule = (y) => {
+      const gradient = context.createLinearGradient(180, y, 900, y);
+      gradient.addColorStop(0, "rgba(224, 216, 173, 0)");
+      gradient.addColorStop(0.5, "rgba(224, 216, 173, 0.2)");
+      gradient.addColorStop(1, "rgba(224, 216, 173, 0)");
+      context.fillStyle = gradient;
+      context.fillRect(180, y, 720, 1);
+      context.beginPath();
+      context.arc(centerX, y, 2.5, 0, Math.PI * 2);
+      context.fillStyle = "#e9e0b9";
+      context.shadowColor = "rgba(218, 228, 164, 0.58)";
+      context.shadowBlur = 12;
+      context.fill();
+      context.shadowBlur = 0;
+    };
+    const drawMist = (x, y, radiusX, radiusY, colors, rotation, blur) => {
+      context.save();
+      context.translate(x, y);
+      context.rotate(rotation);
+      context.filter = `blur(${blur}px)`;
+      const mist = context.createRadialGradient(0, 0, 0, 0, 0, Math.max(radiusX, radiusY));
+      colors.forEach(([stop, color]) => mist.addColorStop(stop, color));
+      context.fillStyle = mist;
+      context.beginPath();
+      context.ellipse(0, 0, radiusX, radiusY, 0, 0, Math.PI * 2);
+      context.fill();
+      context.filter = "none";
+      context.restore();
+    };
+
+    const background = context.createLinearGradient(0, 0, 0, canvas.height);
+    background.addColorStop(0, "#06140e");
+    background.addColorStop(0.48, "#0a2118");
+    background.addColorStop(1, "#07150f");
+    context.fillStyle = background;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    const centerWash = context.createRadialGradient(centerX, 635, 20, centerX, 635, 470);
+    centerWash.addColorStop(0, "rgba(83, 177, 101, 0.18)");
+    centerWash.addColorStop(0.34, "rgba(47, 142, 88, 0.12)");
+    centerWash.addColorStop(1, "rgba(29, 95, 64, 0)");
+    context.fillStyle = centerWash;
+    context.fillRect(130, 240, 820, 770);
+
+    const atmosphere = context.createLinearGradient(0, 1320, 0, 1920);
+    atmosphere.addColorStop(0, "rgba(8, 34, 23, 0)");
+    atmosphere.addColorStop(0.45, "rgba(5, 23, 15, 0.14)");
+    atmosphere.addColorStop(1, "rgba(2, 11, 8, 0.44)");
+    context.fillStyle = atmosphere;
+    context.fillRect(0, 1320, 1080, 600);
+
+    context.fillStyle = "rgba(224, 216, 173, 0.17)";
+    [[112, 412, 1], [923, 477, 2], [152, 864, 2], [844, 938, 1], [281, 594, 1], [756, 710, 1]].forEach(([x, y, radius]) => {
+      context.beginPath();
+      context.arc(x, y, radius, 0, Math.PI * 2);
+      context.shadowColor = "rgba(218, 228, 164, 0.52)";
+      context.shadowBlur = 10;
+      context.fill();
+      context.shadowBlur = 0;
+    });
+
+    const coreX = centerX;
+    const coreY = 665;
+    drawMist(coreX, coreY, 190, 145, [
+      [0, "rgba(248, 243, 203, 0.18)"],
+      [0.3, "rgba(119, 215, 126, 0.2)"],
+      [0.64, "rgba(47, 147, 87, 0.11)"],
+      [1, "rgba(47, 147, 87, 0)"],
+    ], -0.08, 5);
+    drawMist(coreX, coreY, 255, 205, [
+      [0, "rgba(102, 206, 123, 0.16)"],
+      [0.48, "rgba(30, 117, 76, 0.13)"],
+      [1, "rgba(25, 99, 67, 0)"],
+    ], 0.16, 15);
+    drawMist(coreX, coreY, 338, 282, [
+      [0, "rgba(49, 157, 94, 0.12)"],
+      [0.52, "rgba(22, 92, 64, 0.09)"],
+      [1, "rgba(22, 92, 64, 0)"],
+    ], -0.22, 24);
+
+    context.save();
+    context.strokeStyle = "rgba(215, 219, 170, 0.25)";
+    context.shadowColor = "rgba(141, 210, 136, 0.18)";
+    context.shadowBlur = 8;
+    context.lineWidth = 1.4;
+    [
+      [226, 148, -0.28, 4.64],
+      [294, 204, 1.1, 5.45],
+      [372, 267, 3.18, 7.02],
+    ].forEach(([radiusX, radiusY, start, end], index) => {
+      context.beginPath();
+      context.ellipse(coreX, coreY, radiusX, radiusY, index === 1 ? 0.72 : -0.3, start, end);
+      context.stroke();
+    });
+    context.restore();
+
+    [
+      [326, 496, 2], [759, 536, 3], [220, 695, 2], [865, 718, 2],
+      [356, 850, 2], [720, 842, 2], [478, 404, 2], [619, 914, 1],
+    ].forEach(([x, y, radius], index) => {
+      context.beginPath();
+      context.arc(x, y, radius, 0, Math.PI * 2);
+      context.fillStyle = index % 3 === 0 ? "#e8dfb4" : "rgba(192, 226, 156, 0.72)";
+      context.shadowColor = "rgba(217, 226, 170, 0.68)";
+      context.shadowBlur = 12;
+      context.fill();
+      context.shadowBlur = 0;
+    });
+
+    const spark = context.createRadialGradient(coreX - 2, coreY - 2, 0, coreX, coreY, 28);
+    spark.addColorStop(0, "#fffdf2");
+    spark.addColorStop(0.16, "#f0e6bd");
+    spark.addColorStop(0.36, "rgba(210, 237, 167, 0.68)");
+    spark.addColorStop(1, "rgba(110, 204, 119, 0)");
+    context.beginPath();
+    context.arc(coreX, coreY, 19, 0, Math.PI * 2);
+    context.fillStyle = spark;
+    context.shadowColor = "rgba(232, 238, 188, 0.8)";
+    context.shadowBlur = 22;
+    context.fill();
+    context.shadowBlur = 0;
+
+    const logoGlow = context.createRadialGradient(centerX, 143, 0, centerX, 143, 72);
+    logoGlow.addColorStop(0, "rgba(211, 233, 163, 0.22)");
+    logoGlow.addColorStop(1, "rgba(75, 163, 91, 0)");
+    context.fillStyle = logoGlow;
+    context.fillRect(centerX - 72, 71, 144, 144);
+    context.beginPath();
+    context.arc(centerX, 143, 27, 0, Math.PI * 2);
+    context.strokeStyle = "rgba(224, 216, 173, 0.48)";
+    context.lineWidth = 1.4;
+    context.stroke();
+    context.beginPath();
+    context.arc(centerX, 143, 38, 0.35, 4.85);
+    context.strokeStyle = "rgba(130, 197, 126, 0.28)";
+    context.lineWidth = 1;
+    context.stroke();
+    context.beginPath();
+    context.arc(centerX, 143, 49, 3.25, 6.0);
+    context.strokeStyle = "rgba(130, 197, 126, 0.17)";
+    context.stroke();
+    context.beginPath();
+    context.arc(centerX, 143, 6, 0, Math.PI * 2);
+    context.fillStyle = "#fffdf0";
+    context.shadowColor = "rgba(218, 228, 164, 0.75)";
+    context.shadowBlur = 18;
+    context.fill();
+    context.shadowBlur = 0;
+
+    drawCenteredText("A  Q U I E T  P L A C E", 226, "500 20px Avenir Next, Arial, sans-serif", "rgba(220, 219, 183, 0.72)");
+    drawCenteredText("静心一隅", 286, "400 56px STSong, Songti SC, serif", "#f3f0df");
+    drawCenteredText("收拢微光  ·  安住此刻", 339, "400 19px STSong, Songti SC, serif", "rgba(202, 216, 188, 0.56)");
+
+    drawCenteredText("E N E R G Y", 584, "500 20px Avenir Next, Arial, sans-serif", "rgba(239, 237, 206, 0.7)");
+    drawCenteredText(String(Math.floor(data.energy).toLocaleString("zh-CN")), 688, "400 126px Georgia, serif", "#fffdf0");
+    drawCenteredText("能量核心", 772, "400 20px STSong, Songti SC, serif", "rgba(225, 228, 193, 0.48)");
+
+    drawCenteredText("T O D A Y  F O C U S", 1050, "500 19px Avenir Next, Arial, sans-serif", "rgba(221, 220, 183, 0.66)");
+    drawMeasure(formatPosterDuration(data.todayFocusMinutes), 1132, "400 57px Georgia, serif", "500 22px Avenir Next, Arial, sans-serif", "#f4f0dd", "rgba(217, 218, 185, 0.48)");
+    drawSoftRule(1222);
+
+    const columns = [188, 540, 892];
+    const labels = ["W E E K L Y  F O C U S", "T O T A L  F O C U S", "S T R E A K"];
+    const values = [
+      formatPosterDuration(data.weekFocusMinutes),
+      formatPosterDuration(data.totalFocusMinutes),
+      formatPosterDays(data.currentStreak),
+    ];
+    columns.forEach((x, index) => {
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.font = "500 14px Avenir Next, Arial, sans-serif";
+      context.fillStyle = "rgba(221, 220, 183, 0.62)";
+      context.fillText(labels[index], x, 1302);
+      drawMeasure(
+        values[index],
+        1380,
+        "400 30px Georgia, serif",
+        "500 12px Avenir Next, Arial, sans-serif",
+        "rgba(240, 239, 218, 0.88)",
+        "rgba(217, 218, 185, 0.48)",
+        x,
+      );
+    });
+
+    drawCenteredText("沉浸此刻", 1542, "400 20px STSong, Songti SC, serif", "rgba(219, 218, 185, 0.46)");
+    drawCenteredText(data.timer, 1626, "300 70px Avenir Next, Arial, sans-serif", "rgba(238, 239, 223, 0.82)");
+    drawCenteredText("·  Daily Focus Share  ·", 1835, "500 17px Avenir Next, Arial, sans-serif", "rgba(195, 202, 173, 0.42)");
+
+    context.save();
+    context.strokeStyle = "rgba(160, 205, 157, 0.1)";
+    context.lineWidth = 1;
+    [1430, 1535, 1654, 1785].forEach((y, index) => {
+      context.beginPath();
+      context.moveTo(-40, y);
+      context.quadraticCurveTo(centerX - 230, y - 6 - index * 2, centerX, y);
+      context.quadraticCurveTo(centerX + 230, y + 6 + index * 2, 1120, y - 1);
+      context.stroke();
+    });
+    context.restore();
 
     return canvas;
   }
