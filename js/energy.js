@@ -2,14 +2,57 @@
   "use strict";
 
   const { loadData, updateData } = global.FocusCoreStorage;
-  const ENERGY_DECAY_INTERVAL = 24 * 60 * 60 * 1000;
+  const MAX_CATCH_UP_DAYS = 365;
 
-  function getTimestamp(value) {
+  function formatDateKey(date) {
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${date.getFullYear()}-${month}-${day}`;
+  }
+
+  function parseDateInput(value) {
     if (value instanceof Date && !Number.isNaN(value.getTime())) {
-      return value.getTime();
+      return new Date(value.getFullYear(), value.getMonth(), value.getDate());
     }
 
-    return Number.isFinite(value) ? value : null;
+    if (Number.isFinite(value)) {
+      const date = new Date(value);
+      return Number.isNaN(date.getTime())
+        ? null
+        : new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    }
+
+    if (typeof value !== "string") return null;
+
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    if (!match) return null;
+
+    const date = new Date(
+      Number(match[1]),
+      Number(match[2]) - 1,
+      Number(match[3]),
+    );
+    const isRealDate =
+      date.getFullYear() === Number(match[1]) &&
+      date.getMonth() === Number(match[2]) - 1 &&
+      date.getDate() === Number(match[3]);
+
+    return isRealDate ? date : null;
+  }
+
+  function shiftDate(date, days) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+  }
+
+  function getFocusMinutes(records, date) {
+    const record = records[formatDateKey(date)];
+    const minutes =
+      record === true
+        ? 1
+        : record !== null && typeof record === "object"
+          ? record.focusMinutes
+          : record;
+    return Number.isFinite(minutes) && minutes > 0 ? minutes : 0;
   }
 
   function getEnergy() {
@@ -60,39 +103,53 @@
   }
 
   /**
-   * Halve Energy once after 24 continuous hours without valid focus.
-   * A decay is eligible only when the latest focus has not already caused one.
+   * At the start of each local day, settle the previous local day. Energy is
+   * halved only when that completed day contains no valid focus. Each day is
+   * settled once, including days missed while the page was closed.
    */
-  function checkDecay(referenceTime = new Date()) {
-    const nowTimestamp = getTimestamp(referenceTime);
-    if (nowTimestamp === null) return getEnergy();
+  function checkDecay(referenceDate = new Date()) {
+    const today = parseDateInput(referenceDate);
+    if (today === null) return getEnergy();
 
     const data = loadData();
     const originalEnergy = Math.floor(data.permanentData.energy);
-    const lastFocusTimestamp = getTimestamp(
-      data.userState.lastFocusTimestamp,
+    const targetDate = shiftDate(today, -1);
+    const storedLastCheckDate = parseDateInput(
+      data.userState.lastEnergyCheckDate,
     );
-    const lastEnergyDecayTimestamp = getTimestamp(
+    const legacyLastDecayDate = parseDateInput(
       data.userState.lastEnergyDecayTimestamp,
     );
+    const lastCheckDate = storedLastCheckDate ?? legacyLastDecayDate;
 
-    const hasBeenInactiveFor24Hours =
-      lastFocusTimestamp !== null &&
-      nowTimestamp - lastFocusTimestamp >= ENERGY_DECAY_INTERVAL;
-    const latestFocusHasNotDecayed =
-      lastFocusTimestamp !== null &&
-      (lastEnergyDecayTimestamp === null ||
-        lastEnergyDecayTimestamp < lastFocusTimestamp);
+    let cursor =
+      lastCheckDate === null ? targetDate : shiftDate(lastCheckDate, 1);
+    const earliestCatchUpDate = shiftDate(
+      targetDate,
+      -(MAX_CATCH_UP_DAYS - 1),
+    );
+    if (cursor < earliestCatchUpDate) cursor = earliestCatchUpDate;
 
-    if (!hasBeenInactiveFor24Hours || !latestFocusHasNotDecayed) {
-      return originalEnergy;
+    // The clock may have moved backwards, or this date may already be settled.
+    if (cursor > targetDate) return originalEnergy;
+
+    let nextEnergy = originalEnergy;
+    while (cursor <= targetDate) {
+      if (getFocusMinutes(data.dailyRecords, cursor) <= 0) {
+        nextEnergy = Math.floor(nextEnergy / 2);
+      }
+      cursor = shiftDate(cursor, 1);
     }
 
-    const nextEnergy = Math.floor(originalEnergy / 2);
     if (
       !updateData({
         permanentData: { energy: nextEnergy },
-        userState: { lastEnergyDecayTimestamp: nowTimestamp },
+        userState: {
+          lastEnergyCheckDate: formatDateKey(targetDate),
+          ...(nextEnergy !== originalEnergy
+            ? { lastEnergyDecayTimestamp: today.getTime() }
+            : {}),
+        },
       })
     ) {
       return originalEnergy;

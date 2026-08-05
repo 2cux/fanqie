@@ -67,6 +67,7 @@
         lastFocusDate: null,
         lastFocusTimestamp: null,
         lastEnergyDecayTimestamp: null,
+        lastEnergyCheckDate: null,
       },
     };
   }
@@ -221,6 +222,11 @@
           Number.isFinite(userState.lastEnergyDecayTimestamp) &&
           userState.lastEnergyDecayTimestamp >= 0
             ? userState.lastEnergyDecayTimestamp
+            : null,
+        lastEnergyCheckDate:
+          typeof userState.lastEnergyCheckDate === "string" &&
+          parseDateKey(userState.lastEnergyCheckDate) !== null
+            ? userState.lastEnergyCheckDate
             : null,
       },
     };
