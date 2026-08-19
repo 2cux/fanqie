@@ -58,6 +58,22 @@
     return Number.isFinite(value) && value >= 0 ? value : fallback;
   }
 
+  function getRecordFocusMinutes(record) {
+    const value =
+      record === true
+        ? 1
+        : isPlainObject(record)
+          ? record.focusMinutes
+          : record;
+    return Number.isFinite(value) && value > 0 ? value : 0;
+  }
+
+  function getRecordText(record, field) {
+    return isPlainObject(record) && typeof record[field] === "string"
+      ? record[field].trim()
+      : "";
+  }
+
   function createDefaultData() {
     return {
       permanentData: { totalFocusMinutes: 0, energy: 0 },
@@ -120,21 +136,26 @@
       Object.entries(records)
         .map(([dateKey, value]) => {
           // 旧版本分别使用布尔值和数字；读取时继续兼容，
-          // 但统一转换为当前的对象结构。
-          const focusMinutes =
-            value === true
-              ? 1
-              : isPlainObject(value)
-                ? value.focusMinutes
-                : value;
+          // 但统一按当前对象结构读取。只包含 focusMinutes 的旧记录
+          // 会保持精简形态，避免一次迁移改写所有历史数据。
+          const focusMinutes = getRecordFocusMinutes(value);
+          const note = getRecordText(value, "note");
+          const deadline = getRecordText(value, "deadline");
+          const hasMetadata = isPlainObject(value) &&
+            (Object.prototype.hasOwnProperty.call(value, "note") ||
+              Object.prototype.hasOwnProperty.call(value, "deadline"));
 
-          return [dateKey, { focusMinutes }];
+          return [
+            dateKey,
+            hasMetadata
+              ? { focusMinutes, note, deadline }
+              : { focusMinutes },
+          ];
         })
         .filter(([dateKey, record]) => {
           const timestamp = parseDateKey(dateKey);
           return (
-            Number.isFinite(record.focusMinutes) &&
-            record.focusMinutes > 0 &&
+            (record.focusMinutes > 0 || record.note || record.deadline) &&
             timestamp !== null &&
             timestamp >= oldestTimestamp &&
             timestamp <= todayTimestamp
@@ -143,14 +164,6 @@
         .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
         .slice(-DAILY_RECORD_LIMIT),
     );
-  }
-
-  function getRecordFocusMinutes(record) {
-    return isPlainObject(record) &&
-      Number.isFinite(record.focusMinutes) &&
-      record.focusMinutes > 0
-      ? record.focusMinutes
-      : 0;
   }
 
   function deriveFocusState(dailyRecords) {
@@ -339,6 +352,39 @@
     return true;
   }
 
+  function updateDailyRecord(dateKey, fields = {}) {
+    if (parseDateKey(dateKey) === null || !isPlainObject(fields)) return false;
+
+    const state = ensureMemoryState();
+    const currentRecord = state.data.dailyRecords[dateKey];
+    const nextRecord = {
+      focusMinutes: getRecordFocusMinutes(currentRecord),
+      note:
+        typeof fields.note === "string"
+          ? fields.note.trim()
+          : getRecordText(currentRecord, "note"),
+      deadline:
+        typeof fields.deadline === "string"
+          ? fields.deadline.trim()
+          : getRecordText(currentRecord, "deadline"),
+    };
+    const dailyRecords = { ...state.data.dailyRecords };
+
+    if (
+      nextRecord.focusMinutes <= 0 &&
+      !nextRecord.note &&
+      !nextRecord.deadline
+    ) {
+      delete dailyRecords[dateKey];
+    } else {
+      dailyRecords[dateKey] = nextRecord;
+    }
+
+    state.data = normalizeData({ ...state.data, dailyRecords });
+    dirty = true;
+    return true;
+  }
+
   function updateTimer(timerSnapshot) {
     ensureMemoryState().timer = normalizeTimer(timerSnapshot);
     dirty = true;
@@ -373,6 +419,7 @@
     loadData,
     loadTimer,
     updateData,
+    updateDailyRecord,
     updateTimer,
     persist,
     saveData,

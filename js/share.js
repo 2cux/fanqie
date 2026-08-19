@@ -595,6 +595,37 @@
     return `${today.getFullYear()}-${month}-${day}`;
   }
 
+  const HTML2CANVAS_URL =
+    "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js";
+  let html2CanvasLoad = null;
+
+  function loadHtml2Canvas() {
+    if (typeof global.html2canvas === "function") {
+      return Promise.resolve(global.html2canvas);
+    }
+    if (html2CanvasLoad) return html2CanvasLoad;
+
+    html2CanvasLoad = new Promise((resolve) => {
+      const script = document.createElement("script");
+      const timeoutId = global.setTimeout(() => resolve(null), 4000);
+      script.src = HTML2CANVAS_URL;
+      script.async = true;
+      script.onload = () => {
+        global.clearTimeout(timeoutId);
+        resolve(
+          typeof global.html2canvas === "function" ? global.html2canvas : null,
+        );
+      };
+      script.onerror = () => {
+        global.clearTimeout(timeoutId);
+        resolve(null);
+      };
+      document.head.append(script);
+    });
+
+    return html2CanvasLoad;
+  }
+
   function initSharePanel() {
     const lifecycle = global[SHARE_LIFECYCLE_KEY] ?? { initialized: false };
     if (lifecycle.initialized) return;
@@ -644,10 +675,11 @@
       );
 
       try {
+        const html2canvas = await loadHtml2Canvas();
         await new Promise((resolve) => global.requestAnimationFrame(resolve));
         const canvas =
-          typeof global.html2canvas === "function"
-            ? await global.html2canvas(poster, {
+          typeof html2canvas === "function"
+            ? await html2canvas(poster, {
                 backgroundColor: "#07130f",
                 height: poster.clientHeight,
                 logging: false,

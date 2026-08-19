@@ -71,7 +71,6 @@ body {
   content: "";
   border-radius: 48%;
   filter: blur(30px);
-  will-change: opacity, transform;
 }
 
 .ambient-background::before {
@@ -120,7 +119,6 @@ body {
   transform: translate3d(-1%, 1%, 0) rotate(-2deg) scale(1.02);
   animation: ambient-flow-drift 34s cubic-bezier(0.42, 0, 0.58, 1) infinite
     alternate;
-  will-change: opacity, transform;
 }
 
 .ambient-flow::before {
@@ -136,7 +134,6 @@ body {
   );
   animation: ambient-shadow-breathe 40s cubic-bezier(0.45, 0.05, 0.55, 0.95)
     infinite alternate;
-  will-change: opacity, transform;
 }
 
 .ambient-flow i {
@@ -146,7 +143,6 @@ body {
   border-radius: 50%;
   filter: blur(46px);
   mix-blend-mode: screen;
-  will-change: opacity, transform;
 }
 
 .ambient-flow i:first-child {
@@ -599,19 +595,30 @@ button:focus-visible {
   display: none;
 }
 
-body[data-page-visible="false"] .ambient-background *,
-body[data-page-visible="false"] .ambient-background::before,
-body[data-page-visible="false"] .ambient-background::after,
-body[data-page-visible="false"] .ambient-particles i,
-body[data-page-visible="false"] .energy-core *,
-body[data-page-visible="false"] .energy-core::before,
-body[data-page-visible="false"] .energy-core::after {
+/* Hidden tabs should retain their state without consuming animation frames or
+   keeping decorative compositor layers alive. */
+body[data-page-visible="false"] *,
+body[data-page-visible="false"] *::before,
+body[data-page-visible="false"] *::after {
   animation-play-state: paused !important;
+  transition: none !important;
+}
+
+body[data-page-visible="false"] .ambient-background,
+body[data-page-visible="false"] .ambient-particles,
+body[data-page-visible="false"] .energy-core::before,
+body[data-page-visible="false"] .energy-core::after,
+body[data-page-visible="false"] .energy-core > .core-aura,
+body[data-page-visible="false"] .energy-core > .core-flow,
+body[data-page-visible="false"] .energy-core > .core-light,
+body[data-page-visible="false"] .energy-core > .core-particles {
+  display: none !important;
 }
 
 .settings-dialog,
 .confirm-dialog,
-.share-dialog {
+.share-dialog,
+.calendar-dialog {
   width: min(calc(100% - 32px), 520px);
   max-height: calc(100vh - 40px);
   padding: 0;
@@ -623,7 +630,8 @@ body[data-page-visible="false"] .energy-core::after {
 
 .settings-dialog::backdrop,
 .confirm-dialog::backdrop,
-.share-dialog::backdrop {
+.share-dialog::backdrop,
+.calendar-dialog::backdrop {
   background: rgba(3, 10, 7, 0.72);
   backdrop-filter: blur(7px);
 }
@@ -636,7 +644,8 @@ body[data-page-visible="false"] .energy-core::after {
 
 .settings-dialog__panel,
 .confirm-dialog__panel,
-.share-dialog__panel {
+.share-dialog__panel,
+.calendar-dialog__panel {
   background: #13231d;
   border: 1px solid rgba(189, 218, 199, 0.15);
   border-radius: 26px;
@@ -670,6 +679,7 @@ body[data-page-visible="false"] .energy-core::after {
 
 .settings-dialog h2,
 .confirm-dialog h2,
+.calendar-dialog h2,
 .settings-item h3,
 .settings-item p,
 .confirm-dialog p {
@@ -681,6 +691,90 @@ body[data-page-visible="false"] .energy-core::after {
   font-family: "Songti SC", SimSun, serif;
   font-size: 1.5rem;
   font-weight: 500;
+}
+
+.calendar-dialog__panel {
+  padding: 30px;
+}
+
+.calendar-dialog__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.calendar-dialog h2 {
+  margin-top: 6px;
+  font-family: "Songti SC", SimSun, serif;
+  font-size: 1.45rem;
+  font-weight: 500;
+}
+
+.calendar-dialog__date {
+  margin: 8px 0 0;
+  color: var(--color-accent);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+
+.calendar-dialog__focus {
+  margin: 0 0 20px;
+  padding: 11px 13px;
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  background: rgba(139, 211, 167, 0.045);
+  border: 1px solid rgba(139, 211, 167, 0.12);
+  border-radius: 12px;
+}
+
+.calendar-dialog__field {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  color: var(--color-muted);
+  font-size: 0.72rem;
+}
+
+.calendar-dialog__field input,
+.calendar-dialog__field textarea {
+  width: 100%;
+  padding: 11px 12px;
+  color: var(--color-text);
+  font: inherit;
+  line-height: 1.5;
+  resize: vertical;
+  background: rgba(3, 12, 8, 0.3);
+  border: 1px solid rgba(189, 218, 199, 0.14);
+  border-radius: 10px;
+  outline: none;
+}
+
+.calendar-dialog__field input::placeholder,
+.calendar-dialog__field textarea::placeholder {
+  color: rgba(190, 202, 190, 0.34);
+}
+
+.calendar-dialog__field input:focus,
+.calendar-dialog__field textarea:focus {
+  border-color: rgba(139, 211, 167, 0.52);
+  box-shadow: 0 0 0 3px rgba(139, 211, 167, 0.08);
+}
+
+.calendar-dialog__feedback {
+  min-height: 1.2em;
+  margin: 12px 0 0;
+  color: #edc3b9;
+  font-size: 0.7rem;
+}
+
+.calendar-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 .share-dialog h2 {
@@ -1554,7 +1648,6 @@ body[data-page-visible="false"] .energy-core::after {
   opacity: calc(var(--particle-presence) * (0.16 + var(--energy-strength) * 0.4));
   animation: particle-orbit var(--orbit-duration) linear infinite;
   animation-delay: var(--orbit-delay, 0s);
-  will-change: transform;
   transition: opacity 1500ms cubic-bezier(0.65, 0, 0.35, 1);
 }
 
@@ -1572,7 +1665,6 @@ body[data-page-visible="false"] .energy-core::after {
   transform: translate3d(calc(var(--orbit-radius) - 50%), -50%, 0) scale(0.88);
   animation: particle-gather var(--gather-duration) ease-in-out infinite;
   animation-delay: var(--gather-delay, 0s);
-  will-change: opacity, transform;
 }
 
 .core-particles i:nth-child(1) {
@@ -1993,14 +2085,14 @@ body[data-page-visible="false"] .energy-core::after {
 
 .heatmap {
   --heatmap-empty: rgba(178, 205, 199, 0.055);
-  --heatmap-level-1: #f6e7a1;
-  --heatmap-level-2: #f4cf68;
-  --heatmap-level-3: #efb247;
-  --heatmap-level-4: #e88735;
-  --heatmap-level-5: #d95b32;
-  --heatmap-level-6: #c83b32;
-  --heatmap-level-7: #a9252f;
-  --heatmap-level-8: #7f1827;
+  --heatmap-level-1: #214735;
+  --heatmap-level-2: #285b43;
+  --heatmap-level-3: #337251;
+  --heatmap-level-4: #43845b;
+  --heatmap-level-5: #57966a;
+  --heatmap-level-6: #6eaa78;
+  --heatmap-level-7: #8cbd8d;
+  --heatmap-level-8: #b5d09d;
   position: relative;
   min-height: 190px;
   padding: 24px;
@@ -2180,6 +2272,253 @@ body[data-page-visible="false"] .energy-core::after {
   display: none;
 }
 
+/* The former heatmap is now a quiet monthly calendar. Keep the intensity
+   tokens above so existing records still map to the same eight levels. */
+.focus-calendar {
+  min-height: 0;
+  padding: 24px 28px 20px;
+  overflow: visible;
+}
+
+.calendar__root {
+  position: relative;
+}
+
+.calendar__header {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.calendar__title .eyebrow {
+  margin: 0;
+}
+
+.calendar__month {
+  margin: 8px 0 0;
+  color: var(--color-text);
+  font-family: "STSong", "Songti SC", SimSun, serif;
+  font-size: 1.2rem;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+}
+
+.calendar__nav {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  place-items: center;
+  color: var(--color-muted);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  background: rgba(156, 183, 160, 0.035);
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  transition: color 240ms ease, border-color 240ms ease, background 240ms ease;
+}
+
+.calendar__nav:hover,
+.calendar__nav:focus-visible {
+  color: var(--color-accent-bright);
+  background: rgba(139, 211, 167, 0.08);
+  border-color: rgba(139, 211, 167, 0.28);
+  outline: none;
+}
+
+.calendar__weekdays,
+.calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  width: min(100%, 720px);
+  margin-inline: auto;
+}
+
+.calendar__grid {
+  grid-template-rows: repeat(6, minmax(0, 1fr));
+  grid-auto-flow: row;
+}
+
+.calendar__weekdays {
+  margin-bottom: 8px;
+  color: var(--color-faint);
+  font-size: 0.64rem;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-align: center;
+}
+
+.calendar__cell,
+.calendar__empty {
+  min-width: 0;
+  min-height: 0;
+  aspect-ratio: 1 / 1;
+}
+
+.calendar__cell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: rgba(229, 238, 228, 0.8);
+  font: inherit;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  background: rgba(178, 205, 199, 0.045);
+  border: 1px solid rgba(178, 205, 187, 0.1);
+  border-radius: 13px;
+  box-shadow: none;
+  transition: color 260ms ease, border-color 260ms ease, background 260ms ease,
+    box-shadow 260ms ease, transform 260ms ease;
+}
+
+.calendar__cell.heatmap__cell--level-0 {
+  background: rgba(178, 205, 199, 0.045);
+  border-color: rgba(178, 205, 187, 0.1);
+  box-shadow: none;
+}
+
+.calendar__cell.heatmap__cell--level-1 {
+  background: color-mix(in srgb, var(--heatmap-level-1) 78%, transparent);
+  border-color: rgba(66, 132, 91, 0.32);
+  box-shadow: 0 0 10px rgba(53, 126, 80, 0.08);
+}
+
+.calendar__cell.heatmap__cell--level-2 {
+  background: color-mix(in srgb, var(--heatmap-level-2) 82%, transparent);
+  border-color: rgba(71, 148, 99, 0.38);
+  box-shadow: 0 0 12px rgba(53, 126, 80, 0.1);
+}
+
+.calendar__cell.heatmap__cell--level-3 {
+  background: color-mix(in srgb, var(--heatmap-level-3) 86%, transparent);
+  border-color: rgba(88, 166, 111, 0.44);
+  box-shadow: 0 0 14px rgba(63, 143, 88, 0.11);
+}
+
+.calendar__cell.heatmap__cell--level-4 {
+  background: color-mix(in srgb, var(--heatmap-level-4) 88%, transparent);
+  border-color: rgba(111, 184, 125, 0.48);
+  box-shadow: 0 0 16px rgba(73, 153, 94, 0.12);
+}
+
+.calendar__cell.heatmap__cell--level-5 {
+  background: color-mix(in srgb, var(--heatmap-level-5) 90%, transparent);
+  border-color: rgba(133, 198, 140, 0.52);
+  box-shadow: 0 0 18px rgba(91, 169, 105, 0.13);
+}
+
+.calendar__cell.heatmap__cell--level-6 {
+  background: color-mix(in srgb, var(--heatmap-level-6) 92%, transparent);
+  border-color: rgba(158, 209, 151, 0.56);
+  box-shadow: 0 0 20px rgba(110, 184, 121, 0.14);
+}
+
+.calendar__cell.heatmap__cell--level-7 {
+  background: color-mix(in srgb, var(--heatmap-level-7) 94%, transparent);
+  border-color: rgba(184, 220, 168, 0.62);
+  box-shadow: 0 0 22px rgba(140, 199, 139, 0.16);
+}
+
+.calendar__cell.heatmap__cell--level-8 {
+  color: #15261b;
+  background: color-mix(in srgb, var(--heatmap-level-8) 96%, transparent);
+  border-color: rgba(207, 226, 177, 0.7);
+  box-shadow: 0 0 24px rgba(169, 213, 151, 0.18);
+}
+
+.calendar__cell:hover,
+.calendar__cell:focus-visible {
+  z-index: 2;
+  outline: none;
+  border-color: rgba(216, 237, 218, 0.74);
+  box-shadow: 0 0 0 3px rgba(180, 222, 188, 0.1),
+    0 10px 24px rgba(3, 19, 11, 0.2);
+  transform: translateY(-1px);
+}
+
+.calendar__cell--today {
+  outline: 1px solid rgba(205, 226, 181, 0.52);
+  outline-offset: 2px;
+}
+
+.calendar__deadline-dot {
+  position: absolute;
+  right: 9px;
+  bottom: 8px;
+  width: 4px;
+  height: 4px;
+  background: rgba(219, 207, 157, 0.88);
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(219, 207, 157, 0.28);
+}
+
+.calendar__deadline-dot[hidden] {
+  display: none;
+}
+
+.calendar__legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 18px;
+  color: var(--color-faint);
+  font-size: 0.62rem;
+}
+
+.calendar__legend-item {
+  display: inline-flex;
+}
+
+.calendar__legend-label {
+  margin: 0 3px;
+}
+
+.calendar__legend .heatmap__cell {
+  display: inline-block;
+  width: 11px;
+  min-height: 11px;
+  height: 11px;
+  aspect-ratio: auto;
+  border-radius: 3px;
+}
+
+.calendar__tooltip {
+  position: absolute;
+  z-index: 20;
+  width: max-content;
+  max-width: min(260px, calc(100% - 16px));
+  padding: 10px 12px;
+  color: var(--color-text);
+  font-size: 0.72rem;
+  line-height: 1.55;
+  pointer-events: none;
+  background: #193127;
+  border: 1px solid rgba(189, 218, 199, 0.2);
+  border-radius: 10px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+  transform: translate(-50%, calc(-100% - 10px));
+}
+
+.calendar__tooltip div + div {
+  margin-top: 2px;
+  color: var(--color-accent-bright);
+}
+
+.calendar__tooltip div:nth-child(n + 3) {
+  color: #d7c994;
+}
+
+.calendar__tooltip[hidden] {
+  display: none;
+}
+
 .app-footer {
   display: flex;
   align-items: center;
@@ -2311,6 +2650,29 @@ body[data-page-visible="false"] .energy-core::after {
 
   .heatmap {
     padding: 18px 12px;
+  }
+
+  .focus-calendar {
+    padding: 18px 12px 16px;
+  }
+
+  .calendar__header {
+    margin-bottom: 20px;
+  }
+
+  .calendar__weekdays,
+  .calendar__grid {
+    gap: 6px;
+  }
+
+  .calendar__cell,
+  .calendar__empty {
+    min-height: 0;
+    aspect-ratio: 1 / 1;
+  }
+
+  .calendar__cell {
+    border-radius: 10px;
   }
 
   .ambient-particles i:nth-child(n + 6) {

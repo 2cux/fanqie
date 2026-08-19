@@ -185,11 +185,15 @@
           <div class="section-heading section-heading--compact">
             <div>
               <p class="eyebrow">TRACES OF LIGHT</p>
-              <h2 id="heatmap-title">专注留下的微光</h2>
+              <h2 id="heatmap-title">专注日历</h2>
             </div>
           </div>
 
-          <div class="heatmap" data-focus-heatmap aria-label="年度专注热力图"></div>
+          <div
+            class="heatmap focus-calendar"
+            data-focus-calendar
+            aria-label="专注日历"
+          ></div>
         </section>
       </main>
 
@@ -201,6 +205,59 @@
     </div>
 
     <div class="app-notice" data-app-notice role="status" aria-live="polite" hidden></div>
+
+    <dialog
+      class="calendar-dialog"
+      data-calendar-dialog
+      aria-labelledby="calendar-dialog-title"
+    >
+      <div class="calendar-dialog__panel">
+        <header class="calendar-dialog__header">
+          <div>
+            <p class="eyebrow">A SMALL TRACE</p>
+            <h2 id="calendar-dialog-title">记录这一天</h2>
+            <p class="calendar-dialog__date" data-calendar-selected-date></p>
+          </div>
+          <button
+            class="dialog-close"
+            data-calendar-cancel
+            type="button"
+            aria-label="关闭日期编辑"
+          >×</button>
+        </header>
+
+        <p class="calendar-dialog__focus" data-calendar-focus>今日专注 0 min</p>
+
+        <form data-calendar-form>
+          <label class="calendar-dialog__field">
+            <span>备注</span>
+            <textarea
+              data-calendar-note
+              rows="3"
+              maxlength="200"
+              placeholder="留下一句轻量记录"
+            ></textarea>
+          </label>
+          <label class="calendar-dialog__field">
+            <span>Deadline</span>
+            <input
+              data-calendar-deadline
+              type="text"
+              maxlength="120"
+              placeholder="例如：提交初稿"
+            />
+          </label>
+
+          <p class="calendar-dialog__feedback" data-calendar-feedback role="status"></p>
+          <div class="calendar-dialog__actions">
+            <button class="secondary-button" data-calendar-cancel type="button">
+              取消
+            </button>
+            <button class="primary-button" type="submit">保存</button>
+          </div>
+        </form>
+      </div>
+    </dialog>
 
     <dialog class="share-dialog" id="share-dialog" aria-labelledby="share-title">
       <div class="share-dialog__panel">
@@ -328,7 +385,7 @@
           <section class="settings-item">
             <div>
               <h3>导出数据</h3>
-              <p>保存累计专注时间与 Energy。</p>
+              <p>保存累计专注、Energy 与日历备注。</p>
             </div>
             <button class="secondary-button" data-export-data type="button">
               导出 JSON
@@ -338,7 +395,7 @@
           <section class="settings-item settings-item--danger">
             <div>
               <h3>清除数据</h3>
-              <p>移除累计、能量、连续天数和热力图记录。</p>
+              <p>移除累计、能量、连续天数和日历记录。</p>
             </div>
             <button class="danger-button" data-request-clear type="button">
               清除数据
@@ -378,10 +435,6 @@
     <script defer src="./js/focus-motion.js"></script>
     <script defer src="./js/heatmap.js"></script>
     <script defer src="./js/settings.js"></script>
-    <script
-      defer
-      src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"
-    ></script>
     <script defer src="./js/share.js"></script>
     <script defer src="./js/app.js"></script>
   </body>

@@ -7,6 +7,7 @@
     return {
       totalFocusMinutes: data.permanentData.totalFocusMinutes,
       energy: data.permanentData.energy,
+      dailyRecords: data.dailyRecords,
     };
   }
 

@@ -35,7 +35,7 @@
     const display = document.querySelector("[data-timer-display]");
     const status = document.querySelector("[data-timer-status]");
     const actionButton = document.querySelector("[data-timer-action]");
-    const heatmapContainer = document.querySelector("[data-focus-heatmap]");
+    const heatmapContainer = document.querySelector("[data-focus-calendar]");
     const energyCore = document.querySelector("[data-energy-core]");
     const energyValue = document.querySelector("[data-energy-value]");
     const energyParticles = energyCore
@@ -51,6 +51,9 @@
       console.error("计时器界面初始化失败：缺少必要的页面元素。");
       return;
     }
+
+    // Apply the hidden-tab rendering budget before any visual modules start.
+    document.body.dataset.pageVisible = String(!document.hidden);
 
     const timer = new FocusTimer();
     const motionController = global.FocusCoreMotion
@@ -158,10 +161,26 @@
       renderedEnergy = energy;
     }
 
-    if (heatmapContainer && global.FocusCoreHeatmap) {
-      const { FocusHeatmap } = global.FocusCoreHeatmap;
-      heatmap = new FocusHeatmap(heatmapContainer).render();
+    function ensureHeatmap() {
+      if (
+        heatmap ||
+        document.hidden ||
+        !heatmapContainer ||
+        !global.FocusCoreCalendar &&
+        !global.FocusCoreHeatmap
+      ) {
+        return heatmap;
+      }
+
+      const calendarModule =
+        global.FocusCoreCalendar ?? global.FocusCoreHeatmap;
+      const Calendar =
+        calendarModule.FocusCalendar ?? calendarModule.FocusHeatmap;
+      heatmap = new Calendar(heatmapContainer).render();
+      return heatmap;
     }
+
+    ensureHeatmap();
 
     if (global.FocusCoreSettings) {
       global.FocusCoreSettings.initSettingsPanel();
@@ -252,7 +271,11 @@
       if (document.body.dataset.focusState !== timer.state) {
         document.body.dataset.focusState = timer.state;
       }
-      if (motionController?.state !== timer.state) {
+      if (
+        !document.hidden &&
+        motionController &&
+        motionController.state !== timer.state
+      ) {
         motionController.setState(timer.state, motionController.state === null);
       }
     }
@@ -360,6 +383,7 @@
     const handleVisibilityChange = () => {
       document.body.dataset.pageVisible = String(!document.hidden);
       if (!document.hidden) {
+        ensureHeatmap();
         refreshForNewDay();
         creditCompletedMinutes(Date.now());
         syncEnergyCore();

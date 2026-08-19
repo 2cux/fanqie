@@ -49,6 +49,13 @@
     return Number.isFinite(minutes) && minutes > 0 ? minutes : 0;
   }
 
+  function getDailyText(record, field) {
+    return record !== null && typeof record === "object" &&
+      typeof record[field] === "string"
+      ? record[field]
+      : "";
+  }
+
   function calculateCurrentStreak(records, referenceDate) {
     let cursor = referenceDate;
 
@@ -133,11 +140,14 @@
       normalizedDate,
     );
     const roundedMinutes = Math.round(minutes * 1_000_000) / 1_000_000;
+    const currentRecord = data.dailyRecords[dateKey];
 
     const dailyRecords = {
       ...data.dailyRecords,
       [dateKey]: {
         focusMinutes: currentDailyMinutes + roundedMinutes,
+        note: getDailyText(currentRecord, "note"),
+        deadline: getDailyText(currentRecord, "deadline"),
       },
     };
     const updated = updateData({

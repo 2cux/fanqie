@@ -429,3 +429,59 @@ test("旧布尔与数字日记录会迁移为 focusMinutes 对象并保留 365 �
     1,
   );
 });
+
+test("日历编辑会保留专注分钟，并支持无专注日的备注与 deadline", () => {
+  const today = new Date();
+  const todayKey = localDateKey(today);
+  const noteOnlyDate = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate() - 1,
+  );
+  const noteOnlyKey = localDateKey(noteOnlyDate);
+  const runtime = createRuntime(
+    new Map([
+      [
+        "focus-core.state.v4",
+        JSON.stringify({
+          version: 4,
+          data: {
+            permanentData: { totalFocusMinutes: 42, energy: 0 },
+            dailyRecords: { [todayKey]: { focusMinutes: 42 } },
+            userState: {},
+          },
+          timer: {
+            state: "idle",
+            elapsedSeconds: 0,
+            startedAt: null,
+            creditedMinutes: 0,
+            timerDate: todayKey,
+          },
+        }),
+      ],
+    ]),
+  );
+  const storage = runtime.context.FocusCoreStorage;
+
+  assert.equal(
+    storage.updateDailyRecord(todayKey, {
+      note: "上午完成了第一版",
+      deadline: "提交初稿",
+    }),
+    true,
+  );
+  assert.equal(storage.updateDailyRecord(noteOnlyKey, { note: "留一点余地" }), true);
+  assert.equal(storage.persist(), true);
+
+  const data = storage.loadData();
+  assert.deepEqual(data.dailyRecords[todayKey], {
+    focusMinutes: 42,
+    note: "上午完成了第一版",
+    deadline: "提交初稿",
+  });
+  assert.deepEqual(data.dailyRecords[noteOnlyKey], {
+    focusMinutes: 0,
+    note: "留一点余地",
+    deadline: "",
+  });
+});
