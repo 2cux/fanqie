@@ -66,7 +66,6 @@
     return {
       focusMinutes: getFocusMinutes(record),
       note: getRecordText(record, "note"),
-      deadline: getRecordText(record, "deadline"),
     };
   }
 
@@ -88,7 +87,6 @@
 
   function getAriaLabel(dateKey, record) {
     const parts = [`${dateKey}，专注 ${formatDuration(record.focusMinutes)}`];
-    if (record.deadline) parts.push(`Deadline：${record.deadline}`);
     if (record.note) parts.push(`备注：${record.note}`);
     return parts.join("，");
   }
@@ -317,16 +315,17 @@
         );
         const dateKey = formatDateKey(date);
         const cell = document.createElement("button");
-        const marker = document.createElement("span");
+        const dayNumber = document.createElement("span");
+        const noteLabel = document.createElement("span");
 
         cell.type = "button";
         cell.className = "calendar__cell heatmap__cell";
         cell.dataset.date = dateKey;
-        cell.textContent = String(day);
         cell.setAttribute("role", "gridcell");
-        marker.className = "calendar__deadline-dot";
-        marker.setAttribute("aria-hidden", "true");
-        cell.append(marker);
+        dayNumber.className = "calendar__day-number";
+        dayNumber.textContent = String(day);
+        noteLabel.className = "calendar__note calendar__note--empty";
+        cell.append(dayNumber, noteLabel);
         this.updateCell(cell, dateKey, safeRecords[dateKey]);
         this.bindCellTooltipEvents(cell);
         this.cells.set(dateKey, cell);
@@ -377,18 +376,17 @@
       if (isCalendarCell && dateKey === formatDateKey(new Date())) {
         nextClassName += " calendar__cell--today";
       }
-      if (record.deadline && isCalendarCell) {
-        nextClassName += " calendar__cell--has-deadline";
-      }
 
       if (cell.className !== nextClassName) cell.className = nextClassName;
       cell.dataset.duration = formatDuration(record.focusMinutes);
       cell.dataset.note = record.note;
-      cell.dataset.deadline = record.deadline;
       cell.setAttribute("aria-label", getAriaLabel(dateKey, record));
 
-      const deadlineDot = cell.querySelector?.(".calendar__deadline-dot");
-      if (deadlineDot) deadlineDot.hidden = !record.deadline;
+      const noteLabel = cell.querySelector?.(".calendar__note");
+      if (noteLabel) {
+        noteLabel.textContent = record.note;
+        noteLabel.classList.toggle("calendar__note--empty", !record.note);
+      }
     }
 
     updateDate(date = new Date(), records = this.dataProvider()) {
@@ -423,11 +421,6 @@
       dateRow.textContent = cell.dataset.date;
       minutesRow.textContent = `专注 ${cell.dataset.duration}`;
       this.tooltip.append(dateRow, minutesRow);
-      if (cell.dataset.deadline) {
-        const deadlineRow = document.createElement("div");
-        deadlineRow.textContent = `Deadline：${cell.dataset.deadline}`;
-        this.tooltip.append(deadlineRow);
-      }
       if (cell.dataset.note) {
         const noteRow = document.createElement("div");
         noteRow.textContent = `备注：${cell.dataset.note}`;
@@ -459,14 +452,12 @@
       const dateLabel = this.dialog.querySelector("[data-calendar-selected-date]");
       const focusLabel = this.dialog.querySelector("[data-calendar-focus]");
       const noteInput = this.dialog.querySelector("[data-calendar-note]");
-      const deadlineInput = this.dialog.querySelector("[data-calendar-deadline]");
       const feedback = this.dialog.querySelector("[data-calendar-feedback]");
 
       this.editingDateKey = dateKey;
       if (dateLabel) dateLabel.textContent = dateKey;
       if (focusLabel) focusLabel.textContent = `今日专注 ${formatDuration(record.focusMinutes)}`;
       if (noteInput) noteInput.value = record.note;
-      if (deadlineInput) deadlineInput.value = record.deadline;
       if (feedback) feedback.textContent = "";
       this.hideTooltip();
       this.dialog.showModal();
@@ -482,13 +473,11 @@
       if (!this.dialog || !this.editingDateKey) return;
 
       const noteInput = this.dialog.querySelector("[data-calendar-note]");
-      const deadlineInput = this.dialog.querySelector("[data-calendar-deadline]");
       const feedback = this.dialog.querySelector("[data-calendar-feedback]");
       const updated = global.FocusCoreStorage?.updateDailyRecord(
         this.editingDateKey,
         {
           note: noteInput?.value ?? "",
-          deadline: deadlineInput?.value ?? "",
         },
       );
       const saved = updated && global.FocusCoreStorage?.persist();
