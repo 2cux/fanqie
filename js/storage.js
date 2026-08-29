@@ -76,14 +76,12 @@
 
   function createDefaultData() {
     return {
-      permanentData: { totalFocusMinutes: 0, energy: 0 },
+      permanentData: { totalFocusMinutes: 0 },
       dailyRecords: {},
       userState: {
         currentStreak: 0,
         lastFocusDate: null,
         lastFocusTimestamp: null,
-        lastEnergyDecayTimestamp: null,
-        lastEnergyCheckDate: null,
       },
     };
   }
@@ -132,37 +130,46 @@
     const oldestTimestamp =
       todayTimestamp - (DAILY_RECORD_LIMIT - 1) * DAY_IN_MILLISECONDS;
 
-    return Object.fromEntries(
-      Object.entries(records)
-        .map(([dateKey, value]) => {
-          // 旧版本分别使用布尔值和数字；读取时继续兼容，
-          // 但统一按当前对象结构读取。只包含 focusMinutes 的旧记录
-          // 会保持精简形态，避免一次迁移改写所有历史数据。
-          const focusMinutes = getRecordFocusMinutes(value);
-          const note = getRecordText(value, "note");
-          const deadline = getRecordText(value, "deadline");
-          const hasMetadata = isPlainObject(value) &&
-            (Object.prototype.hasOwnProperty.call(value, "note") ||
-              Object.prototype.hasOwnProperty.call(value, "deadline"));
+    const normalizedEntries = Object.entries(records)
+      .map(([dateKey, value]) => {
+        // 旧版本分别使用布尔值和数字；读取时继续兼容，
+        // 但统一按当前对象结构读取。只包含 focusMinutes 的旧记录
+        // 会保持精简形态，避免一次迁移改写所有历史数据。
+        const focusMinutes = getRecordFocusMinutes(value);
+        const note = getRecordText(value, "note");
+        const deadline = getRecordText(value, "deadline");
+        const hasMetadata = isPlainObject(value) &&
+          (Object.prototype.hasOwnProperty.call(value, "note") ||
+            Object.prototype.hasOwnProperty.call(value, "deadline"));
 
-          return [
-            dateKey,
-            hasMetadata
-              ? { focusMinutes, note, deadline }
-              : { focusMinutes },
-          ];
-        })
-        .filter(([dateKey, record]) => {
-          const timestamp = parseDateKey(dateKey);
-          return (
-            (record.focusMinutes > 0 || record.note || record.deadline) &&
-            timestamp !== null &&
-            timestamp >= oldestTimestamp &&
-            timestamp <= todayTimestamp
-          );
-        })
-        .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
-        .slice(-DAILY_RECORD_LIMIT),
+        return [
+          dateKey,
+          hasMetadata
+            ? { focusMinutes, note, deadline }
+            : { focusMinutes },
+        ];
+      })
+      .filter(([dateKey, record]) => {
+        const timestamp = parseDateKey(dateKey);
+        return (
+          (record.focusMinutes > 0 || record.note || record.deadline) &&
+          timestamp !== null &&
+          timestamp >= oldestTimestamp
+        );
+      });
+
+    const historicalEntries = normalizedEntries
+      .filter(([dateKey]) => parseDateKey(dateKey) <= todayTimestamp)
+      .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+      .slice(-DAILY_RECORD_LIMIT);
+    const futureEntries = normalizedEntries
+      .filter(([dateKey]) => parseDateKey(dateKey) > todayTimestamp)
+      .sort(([dateA], [dateB]) => dateA.localeCompare(dateB));
+
+    return Object.fromEntries(
+      [...historicalEntries, ...futureEntries].sort(([dateA], [dateB]) =>
+        dateA.localeCompare(dateB),
+      ),
     );
   }
 
@@ -219,7 +226,6 @@
         totalFocusMinutes: toNonNegativeNumber(
           permanentData.totalFocusMinutes,
         ),
-        energy: Math.floor(toNonNegativeNumber(permanentData.energy)),
       },
       dailyRecords,
       userState: {
@@ -230,16 +236,6 @@
           Number.isFinite(userState.lastFocusTimestamp) &&
           userState.lastFocusTimestamp >= 0
             ? userState.lastFocusTimestamp
-            : null,
-        lastEnergyDecayTimestamp:
-          Number.isFinite(userState.lastEnergyDecayTimestamp) &&
-          userState.lastEnergyDecayTimestamp >= 0
-            ? userState.lastEnergyDecayTimestamp
-            : null,
-        lastEnergyCheckDate:
-          typeof userState.lastEnergyCheckDate === "string" &&
-          parseDateKey(userState.lastEnergyCheckDate) !== null
-            ? userState.lastEnergyCheckDate
             : null,
       },
     };

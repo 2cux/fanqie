@@ -9,22 +9,21 @@ const css = fs.readFileSync(
   "utf8",
 );
 
-test("Energy uses a dedicated number component", () => {
-  assert.match(
-    html,
-    /<strong class="energy-number" data-energy-value>0<\/strong>/,
-  );
-  assert.doesNotMatch(css, /\.energy-core__inner\s+strong\s*\{/);
+test("首页不再展示 Energy 核心", () => {
+  assert.doesNotMatch(html, /ENERGY|能量核心|data-energy-core|data-energy-value/);
+  assert.doesNotMatch(css, /\.energy-core|\.energy-number/);
 });
 
-test("Energy number keeps a fixed centered tabular-numeric slot", () => {
-  const rule = css.match(/\.energy-number\s*\{(?<body>[\s\S]*?)\}/)?.groups.body;
+test("本周剩余时间使用居中的 tabular-numeric 数字层级", () => {
+  assert.match(html, /data-weekly-remaining-slot/);
+  assert.match(html, /data-weekly-remaining-value/);
+  const rule = css.match(
+    /\.weekly-focus-remaining__value\s*\{(?<body>[\s\S]*?)\}/,
+  )?.groups.body;
 
-  assert.ok(rule, "expected a dedicated .energy-number rule");
-  assert.match(rule, /display:\s*grid/);
-  assert.match(rule, /width:\s*5ch/);
-  assert.match(rule, /height:\s*1em/);
-  assert.match(rule, /place-items:\s*center/);
+  assert.ok(rule, "expected a weekly remaining value rule");
+  assert.match(rule, /display:\s*flex/);
+  assert.match(rule, /justify-content:\s*center/);
   assert.match(rule, /line-height:\s*1/);
   assert.match(rule, /font-variant-numeric:\s*lining-nums tabular-nums/);
 });

@@ -43,7 +43,7 @@ function createRuntime(values = new Map()) {
   });
   context.window = context;
 
-  for (const file of ["storage.js", "timer.js", "statistics.js", "energy.js"]) {
+  for (const file of ["storage.js", "timer.js", "statistics.js"]) {
     const source = fs.readFileSync(path.join(PROJECT_ROOT, "js", file), "utf8");
     vm.runInContext(source, context, { filename: file });
   }
@@ -62,12 +62,11 @@ function localDateKey(date = new Date()) {
   return `${date.getFullYear()}-${month}-${day}`;
 }
 
-test("每满一分钟在内存中同步统计和 Energy，并只统一持久化一次", () => {
+test("每满一分钟在内存中同步统计，并只统一持久化一次", () => {
   const runtime = createRuntime();
   const { context } = runtime;
   const storage = context.FocusCoreStorage;
   const statistics = context.FocusCoreStatistics;
-  const energy = context.FocusCoreEnergy;
   const timer = new context.FocusCoreTimer.FocusTimer();
   const startedAt = Date.now();
 
@@ -87,24 +86,20 @@ test("每满一分钟在内存中同步统计和 Energy，并只统一持久化�
   const completedMinutes = timer.getUncreditedMinutes(now);
   assert.equal(completedMinutes, 1);
   assert.equal(statistics.recordFocusMinutes(completedMinutes), true);
-  assert.equal(energy.addEnergy(completedMinutes), 1);
   assert.equal(timer.markMinutesCredited(completedMinutes, now), 1);
 
   const liveData = storage.loadData();
   const liveStats = statistics.getStatistics();
   assert.equal(liveStats.todayFocusMinutes, 1);
   assert.equal(liveStats.totalFocusMinutes, 1);
-  assert.equal(liveData.permanentData.energy, 1);
   assert.equal(Number.isFinite(liveData.userState.lastFocusTimestamp), true);
-  assert.equal(liveData.userState.lastEnergyDecayTimestamp, null);
-  assert.equal(liveData.userState.lastEnergyCheckDate, null);
   assert.equal(runtime.getWriteCount(), 2);
 
   assert.equal(storage.persist(), true);
   assert.equal(runtime.getWriteCount(), 3);
   assert.deepEqual(
     runtime.events.map((event) => event.type),
-    ["focuscore:statisticschange", "focuscore:energychange"],
+    ["focuscore:statisticschange"],
   );
 });
 
@@ -123,7 +118,6 @@ test("暂停时可结算尚未提交的完整分钟并保存统一快照", () =>
   assert.equal(timer.pause(pausedAt), true);
   const completedMinutes = timer.getUncreditedMinutes(pausedAt);
   context.FocusCoreStatistics.recordFocusMinutes(completedMinutes);
-  context.FocusCoreEnergy.addEnergy(completedMinutes);
   timer.markMinutesCredited(completedMinutes, pausedAt);
   storage.persist();
 
@@ -131,7 +125,6 @@ test("暂停时可结算尚未提交的完整分钟并保存统一快照", () =>
   assert.equal(storage.loadTimer().state, "paused");
   assert.equal(storage.loadTimer().creditedMinutes, 1);
   assert.equal(storage.loadData().permanentData.totalFocusMinutes, 1);
-  assert.equal(storage.loadData().permanentData.energy, 1);
 });
 
 test("页面意外退出后可由已保存的开始时间恢复未结算分钟", () => {
@@ -149,12 +142,10 @@ test("页面意外退出后可由已保存的开始时间恢复未结算分钟",
 
   assert.equal(recoveredTimer.getUncreditedMinutes(now), 1);
   context.FocusCoreStatistics.recordFocusMinutes(1);
-  context.FocusCoreEnergy.addEnergy(1);
   recoveredTimer.markMinutesCredited(1, now);
   context.FocusCoreStorage.persist();
 
   assert.equal(context.FocusCoreStatistics.getStatistics().totalFocusMinutes, 1);
-  assert.equal(context.FocusCoreEnergy.getEnergy(), 1);
   assert.equal(context.FocusCoreStorage.loadTimer().creditedMinutes, 1);
 });
 
@@ -168,7 +159,6 @@ test("批量持久化前意外退出不会丢失已结算的分钟", () => {
 
   const completedMinutes = firstTimer.getUncreditedMinutes(Date.now());
   firstRuntime.context.FocusCoreStatistics.recordFocusMinutes(completedMinutes);
-  firstRuntime.context.FocusCoreEnergy.addEnergy(completedMinutes);
   firstTimer.markMinutesCredited(completedMinutes);
 
   assert.equal(firstRuntime.getWriteCount(), writesAfterStart);
@@ -180,7 +170,6 @@ test("批量持久化前意外退出不会丢失已结算的分钟", () => {
   assert.equal(recoveredMinutes, 2);
 
   recoveredRuntime.context.FocusCoreStatistics.recordFocusMinutes(recoveredMinutes);
-  recoveredRuntime.context.FocusCoreEnergy.addEnergy(recoveredMinutes);
   recoveredTimer.markMinutesCredited(recoveredMinutes);
   recoveredRuntime.context.FocusCoreStorage.persist();
 
@@ -188,7 +177,6 @@ test("批量持久化前意外退出不会丢失已结算的分钟", () => {
     recoveredRuntime.context.FocusCoreStatistics.getStatistics().totalFocusMinutes,
     2,
   );
-  assert.equal(recoveredRuntime.context.FocusCoreEnergy.getEnergy(), 2);
 });
 
 test("same-day reload restores the saved timer snapshot", () => {
@@ -198,7 +186,7 @@ test("same-day reload restores the saved timer snapshot", () => {
       JSON.stringify({
         version: 4,
         data: {
-          permanentData: { totalFocusMinutes: 12, energy: 7 },
+          permanentData: { totalFocusMinutes: 12 },
           dailyRecords: {},
           userState: {},
         },
@@ -230,7 +218,7 @@ test("next-day reload resets only the current timer snapshot", () => {
       JSON.stringify({
         version: 4,
         data: {
-          permanentData: { totalFocusMinutes: 42, energy: 9 },
+          permanentData: { totalFocusMinutes: 42 },
           dailyRecords: { [historicalDate]: { focusMinutes: 42 } },
           userState: { lastFocusDate: historicalDate },
         },
@@ -255,96 +243,7 @@ test("next-day reload resets only the current timer snapshot", () => {
   assert.equal(storedTimer.startedAt, null);
   assert.equal(storedTimer.creditedMinutes, 0);
   assert.equal(data.permanentData.totalFocusMinutes, 42);
-  assert.equal(data.permanentData.energy, 9);
   assert.equal(data.dailyRecords[historicalDate].focusMinutes, 42);
-});
-
-test("Energy does not decay when the completed previous day has focus", () => {
-  const today = new Date();
-  const yesterday = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate() - 1,
-  );
-  const lastFocusTimestamp = new Date(
-    yesterday.getFullYear(),
-    yesterday.getMonth(),
-    yesterday.getDate(),
-    1,
-  ).getTime();
-  const values = new Map([
-    [
-      "focus-core.state.v4",
-      JSON.stringify({
-        version: 4,
-        data: {
-          permanentData: { totalFocusMinutes: 60, energy: 20 },
-          dailyRecords: {
-            [localDateKey(yesterday)]: { focusMinutes: 1 },
-          },
-          userState: { lastFocusTimestamp },
-        },
-        timer: {
-          state: "idle",
-          elapsedSeconds: 0,
-          startedAt: null,
-          creditedMinutes: 0,
-          timerDate: localDateKey(today),
-        },
-      }),
-    ],
-  ]);
-  const runtime = createRuntime(values);
-  const { FocusCoreEnergy: energy, FocusCoreStorage: storage } =
-    runtime.context;
-
-  // An old timestamp must not force decay when the completed day has earned
-  // Energy according to the daily record.
-  assert.equal(energy.checkDecay(today), 20);
-  assert.equal(energy.checkDecay(new Date(today.getTime() + 60_000)), 20);
-  assert.equal(
-    storage.loadData().userState.lastEnergyCheckDate,
-    localDateKey(yesterday),
-  );
-});
-
-test("Energy decays at most once per completed day without focus", () => {
-  const today = new Date();
-  const tomorrow = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate() + 1,
-  );
-  const values = new Map([
-    [
-      "focus-core.state.v4",
-      JSON.stringify({
-        version: 4,
-        data: {
-          permanentData: { totalFocusMinutes: 120, energy: 20 },
-          dailyRecords: {},
-          userState: {},
-        },
-        timer: {
-          state: "idle",
-          elapsedSeconds: 0,
-          startedAt: null,
-          creditedMinutes: 0,
-          timerDate: localDateKey(today),
-        },
-      }),
-    ],
-  ]);
-  const runtime = createRuntime(values);
-  const { FocusCoreEnergy: energy, FocusCoreStorage: storage } =
-    runtime.context;
-
-  assert.equal(energy.checkDecay(today), 10);
-  assert.equal(energy.checkDecay(new Date(today.getTime() + 60_000)), 10);
-  assert.equal(energy.checkDecay(tomorrow), 5);
-
-  const after = storage.loadData();
-  assert.equal(after.userState.lastEnergyCheckDate, localDateKey(today));
 });
 
 test("旧布尔与数字日记录会迁移为 focusMinutes 对象并保留 365 天", () => {
@@ -363,7 +262,7 @@ test("旧布尔与数字日记录会迁移为 focusMinutes 对象并保留 365 �
     [
       "focus-core.data.v3",
       JSON.stringify({
-        permanentData: { totalFocusMinutes: 10, energy: 4 },
+        permanentData: { totalFocusMinutes: 10 },
         dailyRecords: {
           [dateKey(0)]: true,
           [dateKey(1)]: 8,
@@ -402,7 +301,7 @@ test("旧布尔与数字日记录会迁移为 focusMinutes 对象并保留 365 �
       JSON.stringify({
         version: 4,
         data: {
-          permanentData: { totalFocusMinutes: 1, energy: 1 },
+          permanentData: { totalFocusMinutes: 1 },
           dailyRecords: { [dateKey(0)]: true },
           userState: { currentStreak: 1, lastFocusDate: dateKey(0) },
         },
@@ -446,7 +345,7 @@ test("日历编辑会保留专注分钟，并支持无专注日的备注与 dead
         JSON.stringify({
           version: 4,
           data: {
-            permanentData: { totalFocusMinutes: 42, energy: 0 },
+            permanentData: { totalFocusMinutes: 42 },
             dailyRecords: { [todayKey]: { focusMinutes: 42 } },
             userState: {},
           },
@@ -484,4 +383,70 @@ test("日历编辑会保留专注分钟，并支持无专注日的备注与 dead
     note: "留一点余地",
     deadline: "",
   });
+});
+
+test("未来日期允许保存备注，且不会生成虚假的专注记录", () => {
+  const today = new Date();
+  const futureDate = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate() + 1,
+  );
+  const futureKey = localDateKey(futureDate);
+  const runtime = createRuntime();
+  const storage = runtime.context.FocusCoreStorage;
+
+  assert.equal(storage.updateDailyRecord(futureKey, { note: "为明天预留" }), true);
+  assert.equal(storage.persist(), true);
+
+  const data = storage.loadData();
+  assert.deepEqual(data.dailyRecords[futureKey], {
+    focusMinutes: 0,
+    note: "为明天预留",
+    deadline: "",
+  });
+  assert.equal(data.permanentData.totalFocusMinutes, 0);
+
+  const restoredRuntime = createRuntime(runtime.values);
+  assert.deepEqual(
+    restoredRuntime.context.FocusCoreStorage.loadData().dailyRecords[futureKey],
+    data.dailyRecords[futureKey],
+  );
+});
+
+test("已有未来备注在读取和月份切换所需的重新渲染中保持可用", () => {
+  const today = new Date();
+  const futureDate = new Date(today.getFullYear(), today.getMonth() + 1, 20);
+  const futureKey = localDateKey(futureDate);
+  const values = new Map([
+    [
+      "focus-core.state.v4",
+      JSON.stringify({
+        version: 4,
+        data: {
+          permanentData: { totalFocusMinutes: 18 },
+          dailyRecords: {
+            [futureKey]: { focusMinutes: 0, note: "下个月的安排" },
+          },
+          userState: {},
+        },
+        timer: {
+          state: "idle",
+          elapsedSeconds: 0,
+          startedAt: null,
+          creditedMinutes: 0,
+          timerDate: localDateKey(today),
+        },
+      }),
+    ],
+  ]);
+  const runtime = createRuntime(values);
+  const record = runtime.context.FocusCoreStorage.loadData().dailyRecords[futureKey];
+
+  assert.deepEqual(record, {
+    focusMinutes: 0,
+    note: "下个月的安排",
+    deadline: "",
+  });
+  assert.equal(runtime.context.FocusCoreStorage.loadData().permanentData.totalFocusMinutes, 18);
 });

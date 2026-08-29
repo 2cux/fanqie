@@ -1,9 +1,10 @@
 (function initApplication(global) {
   "use strict";
 
-  /** 页面协调层：连接计时、统计、Energy 与视图，不承载数据规则。 */
+  /** 页面协调层：连接计时、统计与视图，不承载数据规则。 */
   const { FocusTimer, TIMER_STATES } = global.FocusCoreTimer;
   const { formatDuration, formatDays } = global.FocusCoreFormatters;
+  const WEEKLY_FOCUS_TARGET_MINUTES = 50 * 60;
   const PERSISTENCE_CHECKPOINT_MS = 5 * 60 * 1000;
 
   const STATUS_TEXT = Object.freeze({
@@ -36,11 +37,13 @@
     const status = document.querySelector("[data-timer-status]");
     const actionButton = document.querySelector("[data-timer-action]");
     const heatmapContainer = document.querySelector("[data-focus-calendar]");
-    const energyCore = document.querySelector("[data-energy-core]");
-    const energyValue = document.querySelector("[data-energy-value]");
-    const energyParticles = energyCore
-      ? Array.from(energyCore.querySelectorAll(".core-particles i"))
-      : [];
+    const focusAtmosphere = document.querySelector("[data-focus-atmosphere]");
+    const weeklyRemainingSlot = document.querySelector(
+      "[data-weekly-remaining-slot]",
+    );
+    const weeklyRemainingValue = document.querySelector(
+      "[data-weekly-remaining-value]",
+    );
     const todayStat = document.querySelector("[data-stat-today]");
     const weekStat = document.querySelector("[data-stat-week]");
     const totalStat = document.querySelector("[data-stat-total]");
@@ -66,7 +69,6 @@
     let noticeTimeoutId = null;
     let dailyMaintenanceId = null;
     let currentDateKey = getLocalDateKey();
-    let renderedEnergy = null;
     const listeners = [];
     let destroyed = false;
 
@@ -122,6 +124,7 @@
       statistics = global.FocusCoreStatistics?.getStatistics(),
     ) {
       if (!statistics) return;
+      syncWeeklyRemaining(statistics);
       if (todayStat) {
         renderStatValue(todayStat, formatDuration(statistics.todayFocusMinutes));
       }
@@ -136,29 +139,48 @@
       }
     }
 
-    function syncEnergyCore() {
-      if (!energyCore || !energyValue || !global.FocusCoreEnergy) return;
+    function syncWeeklyRemaining(statistics) {
+      if (!weeklyRemainingSlot || !weeklyRemainingValue) return;
 
-      const energy = Math.max(0, global.FocusCoreEnergy.getEnergy());
-      if (renderedEnergy === energy) return;
+      const weeklyFocusMinutes = Number.isFinite(statistics.weekFocusMinutes)
+        ? Math.floor(statistics.weekFocusMinutes)
+        : 0;
+      const remainingMinutes = Math.max(
+        0,
+        WEEKLY_FOCUS_TARGET_MINUTES - weeklyFocusMinutes,
+      );
+      const isComplete = remainingMinutes <= 0;
 
-      const visuals = global.FocusCoreEnergyVisual?.mapEnergyToVisuals(
-        energy,
-        energyParticles.length,
-      ) ?? { intensity: 0, range: 0, flow: 0, particlePresence: [] };
+      weeklyRemainingSlot.classList.toggle("is-hidden", isComplete);
+      weeklyRemainingSlot.setAttribute("aria-hidden", String(isComplete));
+      if (isComplete) return;
 
-      energyValue.textContent = energy.toLocaleString("zh-CN");
-      energyCore.style.setProperty("--energy-strength", visuals.intensity.toFixed(4));
-      energyCore.style.setProperty("--energy-range", visuals.range.toFixed(4));
-      energyCore.style.setProperty("--energy-flow", visuals.flow.toFixed(4));
-      energyParticles.forEach((particle, index) => {
-        particle.style.setProperty(
-          "--particle-presence",
-          (visuals.particlePresence[index] ?? 0).toFixed(4),
-        );
-      });
-      energyCore.setAttribute("aria-label", `能量核心，当前能量 ${energy}`);
-      renderedEnergy = energy;
+      const formattedValue = formatDuration(remainingMinutes);
+      if (
+        weeklyRemainingValue.childElementCount > 0 &&
+        weeklyRemainingValue.getAttribute("aria-label") === formattedValue
+      ) {
+        return;
+      }
+
+      const tokens = formattedValue.trim().split(/\s+/);
+      const fragments = [];
+      for (let index = 0; index < tokens.length; index += 2) {
+        const measure = document.createElement("span");
+        const number = document.createElement("span");
+        const unit = document.createElement("span");
+
+        measure.className = "weekly-focus-remaining__measure";
+        number.className = "weekly-focus-remaining__number";
+        unit.className = "weekly-focus-remaining__unit";
+        number.textContent = tokens[index];
+        unit.textContent = tokens[index + 1] ?? "";
+        measure.append(number, unit);
+        fragments.push(measure);
+      }
+
+      weeklyRemainingValue.replaceChildren(...fragments);
+      weeklyRemainingValue.setAttribute("aria-label", formattedValue);
     }
 
     function ensureHeatmap() {
@@ -211,7 +233,7 @@
       now = Date.now(),
       shouldSchedulePersistence = true,
     ) {
-      if (!global.FocusCoreStatistics || !global.FocusCoreEnergy) return;
+      if (!global.FocusCoreStatistics) return;
 
       const uncreditedMinutes = timer.getUncreditedMinutes(now);
       if (uncreditedMinutes <= 0) return false;
@@ -222,13 +244,6 @@
 
       if (!statisticsUpdated) {
         showNotice("专注统计更新失败。", "error");
-        return false;
-      }
-
-      const energyBefore = global.FocusCoreEnergy.getEnergy();
-      const energyAfter = global.FocusCoreEnergy.addEnergy(uncreditedMinutes);
-      if (energyAfter < energyBefore + uncreditedMinutes) {
-        showNotice("Energy 更新失败。", "error");
         return false;
       }
 
@@ -263,10 +278,10 @@
         actionButton.dataset.state = timer.state;
       }
       if (
-        energyCore &&
-        energyCore.dataset.focusState !== timer.state
+        focusAtmosphere &&
+        focusAtmosphere.dataset.focusState !== timer.state
       ) {
-        energyCore.dataset.focusState = timer.state;
+        focusAtmosphere.dataset.focusState = timer.state;
       }
       if (document.body.dataset.focusState !== timer.state) {
         document.body.dataset.focusState = timer.state;
@@ -304,9 +319,7 @@
 
       currentDateKey = nextDateKey;
       timer.resetForNewDay();
-      global.FocusCoreEnergy?.checkDecay();
       persistState();
-      syncEnergyCore();
       syncStatistics();
       heatmap?.render();
     }
@@ -386,7 +399,6 @@
         ensureHeatmap();
         refreshForNewDay();
         creditCompletedMinutes(Date.now());
-        syncEnergyCore();
         const elapsedSeconds = render();
         motionController?.setState(timer.state, true);
         syncTimerSchedules(elapsedSeconds);
@@ -413,9 +425,7 @@
       syncStatistics(event.detail);
     };
     addListener(global, "focuscore:statisticschange", handleStatisticsChange);
-    addListener(global, "focuscore:energychange", syncEnergyCore);
     const handleDataCleared = () => {
-      syncEnergyCore();
       syncStatistics();
       heatmap?.render();
       showNotice("所有专注数据已清除。");
@@ -423,10 +433,8 @@
     addListener(global, "focuscore:datacleared", handleDataCleared);
 
     document.body.dataset.pageVisible = String(!document.hidden);
-    global.FocusCoreEnergy?.checkDecay();
     creditCompletedMinutes(Date.now(), false);
     persistState();
-    syncEnergyCore();
     syncStatistics();
     const elapsedSeconds = render();
     syncTimerSchedules(elapsedSeconds);

@@ -19,16 +19,15 @@
   ]);
 
   const CORE_ANIMATIONS = new Set([
-    "core-breathe",
-    "core-halo-breathe",
+    "focus-halo-breathe",
     "aura-drift-one",
     "aura-drift-two",
     "aura-drift-three",
-    "energy-flow",
-    "energy-flow-reverse",
-    "particle-drift",
+    "mist-flow-one",
+    "mist-flow-two",
+    "mist-flow-three",
+    "mist-flow-four",
     "particle-orbit",
-    "particle-gather",
   ]);
 
   function easeInOutCubic(progress) {

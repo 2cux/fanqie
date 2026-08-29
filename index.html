@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0d1411" />
     <meta
       name="description"
-      content="一处安静收拢心神与专注能量的个人空间。"
+      content="一处安静收拢心神与专注时间的个人空间。"
     />
     <link
       rel="icon"
@@ -103,31 +103,23 @@
             </div>
 
             <div
-              class="energy-core"
-              data-energy-core
+              class="focus-atmosphere"
+              data-focus-atmosphere
               data-focus-state="idle"
-              aria-label="能量核心，当前能量 0"
             >
-              <!-- Layer 3: soft, boundaryless diffusion light -->
-              <div class="core-aura" aria-hidden="true">
+              <!-- 保留与专注状态绑定的柔和环境光，不再承载任何数值。 -->
+              <div class="focus-atmosphere__aura" aria-hidden="true">
                 <i></i><i></i><i></i>
               </div>
-              <!-- Layer 2: translucent energy mist -->
-              <div class="core-flow" aria-hidden="true">
+              <div class="focus-atmosphere__flow" aria-hidden="true">
                 <i></i><i></i><i></i><i></i>
               </div>
-              <!-- Layer 1: concentrated living light source -->
-              <div class="core-light" aria-hidden="true">
-                <i></i><i></i><i></i>
-              </div>
-              <div class="core-particles" aria-hidden="true">
-                <i></i><i></i><i></i><i></i><i></i><i></i>
-                <i></i><i></i>
-              </div>
-              <div class="energy-core__inner">
-                <span>ENERGY</span>
-                <strong class="energy-number" data-energy-value>0</strong>
-                <small>能量核心</small>
+              <div class="weekly-focus-remaining" data-weekly-remaining-slot>
+                <span class="weekly-focus-remaining__label">本周还需专注</span>
+                <strong
+                  class="weekly-focus-remaining__value"
+                  data-weekly-remaining-value
+                ></strong>
               </div>
             </div>
 
@@ -290,26 +282,6 @@
               <p class="share-poster__tagline">收拢微光 · 安住此刻</p>
             </header>
 
-            <section class="share-poster__energy" aria-label="能量">
-              <div class="share-poster__core" aria-hidden="true">
-                <div class="share-poster__core-mist">
-                  <i></i><i></i><i></i>
-                </div>
-                <div class="share-poster__core-orbits">
-                  <i></i><i></i><i></i>
-                </div>
-                <div class="share-poster__core-particles">
-                  <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-                </div>
-                <i class="share-poster__core-spark"></i>
-                <div class="share-poster__core-reading">
-                  <p>ENERGY</p>
-                  <strong data-poster-energy>0</strong>
-                  <span>能量核心</span>
-                </div>
-              </div>
-            </section>
-
             <section class="share-poster__today" aria-label="今日专注">
               <p>TODAY FOCUS</p>
               <strong class="share-poster__measure" data-poster-today>0 min</strong>
@@ -376,7 +348,7 @@
           <section class="settings-item">
             <div>
               <h3>导出数据</h3>
-              <p>保存累计专注、Energy 与日历备注。</p>
+              <p>保存累计专注和日历备注。</p>
             </div>
             <button class="secondary-button" data-export-data type="button">
               导出 JSON
@@ -386,7 +358,7 @@
           <section class="settings-item settings-item--danger">
             <div>
               <h3>清除数据</h3>
-              <p>移除累计、能量、连续天数和日历记录。</p>
+              <p>移除累计、连续天数和日历记录。</p>
             </div>
             <button class="danger-button" data-request-clear type="button">
               清除数据
@@ -421,8 +393,6 @@
     <script defer src="./js/formatters.js"></script>
     <script defer src="./js/timer.js"></script>
     <script defer src="./js/statistics.js"></script>
-    <script defer src="./js/energy.js"></script>
-    <script defer src="./js/energy-visual.js"></script>
     <script defer src="./js/focus-motion.js"></script>
     <script defer src="./js/heatmap.js"></script>
     <script defer src="./js/settings.js"></script>

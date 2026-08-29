@@ -23,18 +23,11 @@
 
   function readShareData() {
     const statistics = global.FocusCoreStatistics?.getStatistics?.() ?? {};
-    const energyFromModule = global.FocusCoreEnergy?.getEnergy?.();
-    const energyFromView = Number(
-      document.querySelector("[data-energy-value]")?.textContent?.replace(/,/g, ""),
-    );
     const timerText =
       document.querySelector("[data-timer-display]")?.textContent?.trim() ??
       "00:00:00";
 
     return {
-      energy: toSafeNumber(
-        Number.isFinite(energyFromModule) ? energyFromModule : energyFromView,
-      ),
       todayFocusMinutes: toSafeNumber(statistics.todayFocusMinutes),
       weekFocusMinutes: toSafeNumber(statistics.weekFocusMinutes),
       totalFocusMinutes: toSafeNumber(statistics.totalFocusMinutes),
@@ -74,7 +67,6 @@
   }
 
   function renderPoster(data = readShareData()) {
-    setText("[data-poster-energy]", Math.floor(data.energy).toLocaleString("zh-CN"));
     renderPosterMeasure("[data-poster-today]", formatPosterDuration(data.todayFocusMinutes));
     renderPosterMeasure("[data-poster-week]", formatPosterDuration(data.weekFocusMinutes));
     renderPosterMeasure("[data-poster-total]", formatPosterDuration(data.totalFocusMinutes));
@@ -275,13 +267,9 @@
     drawCenteredText("静心一隅", 315, "400 58px STSong, Songti SC, serif", "#f0f2e8");
     drawCenteredText("收拢微光  ·  安住此刻", 374, "400 20px STSong, Songti SC, serif", "rgba(188, 214, 188, 0.66)");
 
-    drawCenteredText("E N E R G Y", 570, "500 20px Avenir Next, Arial, sans-serif", "rgba(202, 227, 204, 0.78)");
-    drawCenteredText(String(Math.floor(data.energy).toLocaleString("zh-CN")), 710, "400 142px Georgia, serif", "#f2f5e9");
-    drawCenteredText("能量核心", 820, "400 22px STSong, Songti SC, serif", "rgba(208, 229, 207, 0.56)");
-
-    drawCenteredText("T O D A Y  F O C U S", 1020, "500 20px Avenir Next, Arial, sans-serif", "rgba(202, 227, 204, 0.76)");
-    drawCenteredText(formatPosterDuration(data.todayFocusMinutes), 1105, "400 54px Georgia, serif", "#eef2e8");
-    drawRule(1190);
+    drawCenteredText("T O D A Y  F O C U S", 650, "500 20px Avenir Next, Arial, sans-serif", "rgba(202, 227, 204, 0.76)");
+    drawCenteredText(formatPosterDuration(data.todayFocusMinutes), 735, "400 54px Georgia, serif", "#eef2e8");
+    drawRule(820);
 
     const columns = [180, 540, 900];
     const labels = ["W E E K L Y  F O C U S", "T O T A L  F O C U S", "S T R E A K"];
@@ -294,19 +282,19 @@
       context.font = "500 15px Avenir Next, Arial, sans-serif";
       context.fillStyle = "rgba(202, 227, 204, 0.7)";
       context.textAlign = "center";
-      context.fillText(labels[index], x, 1280);
+      context.fillText(labels[index], x, 910);
       context.font = "400 30px Georgia, serif";
       context.fillStyle = "#e6ece2";
-      context.fillText(values[index], x, 1355);
+      context.fillText(values[index], x, 985);
       if (index < 2) {
         context.fillStyle = "rgba(174, 209, 175, 0.16)";
-        context.fillRect(x + 180, 1250, 2, 130);
+        context.fillRect(x + 180, 880, 2, 130);
       }
     });
 
-    drawRule(1490);
-    drawCenteredText("沉浸此刻", 1575, "400 22px STSong, Songti SC, serif", "rgba(208, 229, 207, 0.56)");
-    drawCenteredText(data.timer, 1680, "200 82px Avenir Next, Arial, sans-serif", "#f0f2e8");
+    drawRule(1120);
+    drawCenteredText("沉浸此刻", 1205, "400 22px STSong, Songti SC, serif", "rgba(208, 229, 207, 0.56)");
+    drawCenteredText(data.timer, 1310, "200 82px Avenir Next, Arial, sans-serif", "#f0f2e8");
     drawCenteredText("·  Daily Focus Share  ·", 1830, "500 18px Avenir Next, Arial, sans-serif", "rgba(184, 215, 185, 0.72)");
 
     return canvas;
@@ -378,21 +366,6 @@
       context.fill();
       context.shadowBlur = 0;
     };
-    const drawMist = (x, y, radiusX, radiusY, colors, rotation, blur) => {
-      context.save();
-      context.translate(x, y);
-      context.rotate(rotation);
-      context.filter = `blur(${blur}px)`;
-      const mist = context.createRadialGradient(0, 0, 0, 0, 0, Math.max(radiusX, radiusY));
-      colors.forEach(([stop, color]) => mist.addColorStop(stop, color));
-      context.fillStyle = mist;
-      context.beginPath();
-      context.ellipse(0, 0, radiusX, radiusY, 0, 0, Math.PI * 2);
-      context.fill();
-      context.filter = "none";
-      context.restore();
-    };
-
     const background = context.createLinearGradient(0, 0, 0, canvas.height);
     background.addColorStop(0, "#06140e");
     background.addColorStop(0.48, "#0a2118");
@@ -423,67 +396,6 @@
       context.fill();
       context.shadowBlur = 0;
     });
-
-    const coreX = centerX;
-    const coreY = 665;
-    drawMist(coreX, coreY, 190, 145, [
-      [0, "rgba(248, 243, 203, 0.18)"],
-      [0.3, "rgba(119, 215, 126, 0.2)"],
-      [0.64, "rgba(47, 147, 87, 0.11)"],
-      [1, "rgba(47, 147, 87, 0)"],
-    ], -0.08, 5);
-    drawMist(coreX, coreY, 255, 205, [
-      [0, "rgba(102, 206, 123, 0.16)"],
-      [0.48, "rgba(30, 117, 76, 0.13)"],
-      [1, "rgba(25, 99, 67, 0)"],
-    ], 0.16, 15);
-    drawMist(coreX, coreY, 338, 282, [
-      [0, "rgba(49, 157, 94, 0.12)"],
-      [0.52, "rgba(22, 92, 64, 0.09)"],
-      [1, "rgba(22, 92, 64, 0)"],
-    ], -0.22, 24);
-
-    context.save();
-    context.strokeStyle = "rgba(215, 219, 170, 0.25)";
-    context.shadowColor = "rgba(141, 210, 136, 0.18)";
-    context.shadowBlur = 8;
-    context.lineWidth = 1.4;
-    [
-      [226, 148, -0.28, 4.64],
-      [294, 204, 1.1, 5.45],
-      [372, 267, 3.18, 7.02],
-    ].forEach(([radiusX, radiusY, start, end], index) => {
-      context.beginPath();
-      context.ellipse(coreX, coreY, radiusX, radiusY, index === 1 ? 0.72 : -0.3, start, end);
-      context.stroke();
-    });
-    context.restore();
-
-    [
-      [326, 496, 2], [759, 536, 3], [220, 695, 2], [865, 718, 2],
-      [356, 850, 2], [720, 842, 2], [478, 404, 2], [619, 914, 1],
-    ].forEach(([x, y, radius], index) => {
-      context.beginPath();
-      context.arc(x, y, radius, 0, Math.PI * 2);
-      context.fillStyle = index % 3 === 0 ? "#e8dfb4" : "rgba(192, 226, 156, 0.72)";
-      context.shadowColor = "rgba(217, 226, 170, 0.68)";
-      context.shadowBlur = 12;
-      context.fill();
-      context.shadowBlur = 0;
-    });
-
-    const spark = context.createRadialGradient(coreX - 2, coreY - 2, 0, coreX, coreY, 28);
-    spark.addColorStop(0, "#fffdf2");
-    spark.addColorStop(0.16, "#f0e6bd");
-    spark.addColorStop(0.36, "rgba(210, 237, 167, 0.68)");
-    spark.addColorStop(1, "rgba(110, 204, 119, 0)");
-    context.beginPath();
-    context.arc(coreX, coreY, 19, 0, Math.PI * 2);
-    context.fillStyle = spark;
-    context.shadowColor = "rgba(232, 238, 188, 0.8)";
-    context.shadowBlur = 22;
-    context.fill();
-    context.shadowBlur = 0;
 
     const logoGlow = context.createRadialGradient(centerX, 143, 0, centerX, 143, 72);
     logoGlow.addColorStop(0, "rgba(211, 233, 163, 0.22)");
@@ -516,13 +428,9 @@
     drawCenteredText("静心一隅", 286, "400 56px STSong, Songti SC, serif", "#f3f0df");
     drawCenteredText("收拢微光  ·  安住此刻", 339, "400 19px STSong, Songti SC, serif", "rgba(202, 216, 188, 0.56)");
 
-    drawCenteredText("E N E R G Y", 584, "500 20px Avenir Next, Arial, sans-serif", "rgba(239, 237, 206, 0.7)");
-    drawCenteredText(String(Math.floor(data.energy).toLocaleString("zh-CN")), 688, "400 126px Georgia, serif", "#fffdf0");
-    drawCenteredText("能量核心", 772, "400 20px STSong, Songti SC, serif", "rgba(225, 228, 193, 0.48)");
-
-    drawCenteredText("T O D A Y  F O C U S", 1050, "500 19px Avenir Next, Arial, sans-serif", "rgba(221, 220, 183, 0.66)");
-    drawMeasure(formatPosterDuration(data.todayFocusMinutes), 1132, "400 57px Georgia, serif", "500 22px Avenir Next, Arial, sans-serif", "#f4f0dd", "rgba(217, 218, 185, 0.48)");
-    drawSoftRule(1222);
+    drawCenteredText("T O D A Y  F O C U S", 620, "500 19px Avenir Next, Arial, sans-serif", "rgba(221, 220, 183, 0.66)");
+    drawMeasure(formatPosterDuration(data.todayFocusMinutes), 702, "400 57px Georgia, serif", "500 22px Avenir Next, Arial, sans-serif", "#f4f0dd", "rgba(217, 218, 185, 0.48)");
+    drawSoftRule(790);
 
     const columns = [188, 540, 892];
     const labels = ["W E E K L Y  F O C U S", "T O T A L  F O C U S", "S T R E A K"];
@@ -536,10 +444,10 @@
       context.textBaseline = "middle";
       context.font = "500 14px Avenir Next, Arial, sans-serif";
       context.fillStyle = "rgba(221, 220, 183, 0.62)";
-      context.fillText(labels[index], x, 1302);
+      context.fillText(labels[index], x, 882);
       drawMeasure(
         values[index],
-        1380,
+        960,
         "400 30px Georgia, serif",
         "500 12px Avenir Next, Arial, sans-serif",
         "rgba(240, 239, 218, 0.88)",
@@ -548,8 +456,8 @@
       );
     });
 
-    drawCenteredText("沉浸此刻", 1542, "400 20px STSong, Songti SC, serif", "rgba(219, 218, 185, 0.46)");
-    drawCenteredText(data.timer, 1626, "300 70px Avenir Next, Arial, sans-serif", "rgba(238, 239, 223, 0.82)");
+    drawCenteredText("沉浸此刻", 1180, "400 20px STSong, Songti SC, serif", "rgba(219, 218, 185, 0.46)");
+    drawCenteredText(data.timer, 1264, "300 70px Avenir Next, Arial, sans-serif", "rgba(238, 239, 223, 0.82)");
     drawCenteredText("·  Daily Focus Share  ·", 1835, "500 17px Avenir Next, Arial, sans-serif", "rgba(195, 202, 173, 0.42)");
 
     context.save();
@@ -714,7 +622,6 @@
       if (dialog.open) renderPoster();
     };
     global.addEventListener("focuscore:statisticschange", refreshOpenPoster);
-    global.addEventListener("focuscore:energychange", refreshOpenPoster);
   }
 
   global.FocusCoreShare = Object.freeze({

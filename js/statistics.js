@@ -159,6 +159,7 @@
       userState: {
         currentStreak: calculateCurrentStreak(dailyRecords, new Date()),
         lastFocusDate: findLastFocusDate(dailyRecords),
+        lastFocusTimestamp: Date.now(),
       },
     });
 

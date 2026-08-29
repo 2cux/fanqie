@@ -17,7 +17,7 @@
   ];
   const WEEKDAY_LABELS = ["日", "一", "二", "三", "四", "五", "六"];
   const CALENDAR_SLOT_COUNT = 42;
-  const ENERGY_LEVELS = [
+  const FOCUS_LEVELS = [
     { level: 0, description: "0分钟：未专注" },
     { level: 1, description: "1–29分钟" },
     { level: 2, description: "30–59分钟" },
@@ -69,7 +69,7 @@
     };
   }
 
-  function getEnergyLevel(minutes) {
+  function getFocusLevel(minutes) {
     if (minutes <= 0) return 0;
     if (minutes < 30) return 1;
     if (minutes < 60) return 2;
@@ -346,7 +346,7 @@
       less.textContent = "少";
       footer.append(less);
 
-      ENERGY_LEVELS.slice(1).forEach(({ level, description }) => {
+      FOCUS_LEVELS.slice(1).forEach(({ level, description }) => {
         const item = document.createElement("span");
         const swatch = document.createElement("span");
         item.className = "calendar__legend-item";
@@ -368,7 +368,7 @@
       if (!cell) return;
 
       const record = normalizeRecord(rawRecord);
-      const level = getEnergyLevel(record.focusMinutes);
+      const level = getFocusLevel(record.focusMinutes);
       const isCalendarCell = cell.className.includes("calendar__cell");
       let nextClassName = isCalendarCell
         ? `calendar__cell heatmap__cell heatmap__cell--level-${level}`
@@ -516,7 +516,7 @@
     FocusCalendar,
     // Keep the old export as a compatibility bridge for existing integrations.
     FocusHeatmap: FocusCalendar,
-    getEnergyLevel,
+    getFocusLevel,
     getFocusMinutes,
   });
 
