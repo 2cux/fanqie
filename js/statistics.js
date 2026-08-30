@@ -37,7 +37,8 @@
   }
 
   function getStartOfWeek(date) {
-    return shiftDate(date, -date.getDay());
+    const daysSinceMonday = (date.getDay() + 6) % 7;
+    return shiftDate(date, -daysSinceMonday);
   }
 
   function getDailyMinutes(records, date) {

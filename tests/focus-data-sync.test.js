@@ -451,13 +451,14 @@ test("已有未来备注在读取和月份切换所需的重新渲染中保持�
   assert.equal(runtime.context.FocusCoreStorage.loadData().permanentData.totalFocusMinutes, 18);
 });
 
-test("每周专注从周日凌晨开始计算，并在周日排除上周记录", () => {
-  const weekSunday = new Date();
-  weekSunday.setHours(0, 0, 0, 0);
-  weekSunday.setDate(weekSunday.getDate() - weekSunday.getDay());
+test("每周专注按周一到周日计算，并在周一凌晨切换周期", () => {
+  const weekMonday = new Date();
+  weekMonday.setHours(0, 0, 0, 0);
+  const daysSinceMonday = (weekMonday.getDay() + 6) % 7;
+  weekMonday.setDate(weekMonday.getDate() - daysSinceMonday);
 
   const dateKeyAt = (dayOffset) => {
-    const date = new Date(weekSunday);
+    const date = new Date(weekMonday);
     date.setDate(date.getDate() + dayOffset);
     return localDateKey(date);
   };
