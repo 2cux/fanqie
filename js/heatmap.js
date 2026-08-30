@@ -15,7 +15,7 @@
     "11月",
     "12月",
   ];
-  const WEEKDAY_LABELS = ["日", "一", "二", "三", "四", "五", "六"];
+  const WEEKDAY_LABELS = ["一", "二", "三", "四", "五", "六", "日"];
   const CALENDAR_SLOT_COUNT = 42;
   const FOCUS_LEVELS = [
     { level: 0, description: "0分钟：未专注" },
@@ -229,7 +229,8 @@
         firstDate.getMonth() + 1,
         0,
       ).getDate();
-      const leadingSpacers = firstDate.getDay();
+      // The calendar is Monday-first while Date#getDay() is Sunday-first.
+      const leadingSpacers = (firstDate.getDay() + 6) % 7;
       const monthKey = getMonthKey(firstDate);
       const layoutKey = `${monthKey}:${daysInMonth}:${leadingSpacers}`;
 
