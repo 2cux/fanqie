@@ -4,7 +4,7 @@
   /** 页面协调层：连接计时、统计与视图，不承载数据规则。 */
   const { FocusTimer, TIMER_STATES } = global.FocusCoreTimer;
   const { formatDuration, formatDays } = global.FocusCoreFormatters;
-  const WEEKLY_FOCUS_TARGET_MINUTES = 50 * 60;
+  const WEEKLY_FOCUS_TARGET_MINUTES = 35 * 60;
   const PERSISTENCE_CHECKPOINT_MS = 5 * 60 * 1000;
 
   const STATUS_TEXT = Object.freeze({

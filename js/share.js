@@ -2,6 +2,7 @@
   "use strict";
 
   const SHARE_LIFECYCLE_KEY = "__focusCoreShareLifecycle";
+  const WEEKLY_FOCUS_TARGET_MINUTES = 35 * 60;
 
   function toSafeNumber(value, fallback = 0) {
     return Number.isFinite(value) && value >= 0 ? value : fallback;
@@ -21,24 +22,22 @@
     return `${totalDays} ${totalDays === 1 ? "day" : "days"}`;
   }
 
+  function getWeeklyRemainingMinutes(weekFocusMinutes) {
+    return Math.max(
+      0,
+      WEEKLY_FOCUS_TARGET_MINUTES - toSafeNumber(weekFocusMinutes),
+    );
+  }
+
   function readShareData() {
     const statistics = global.FocusCoreStatistics?.getStatistics?.() ?? {};
-    const timerText =
-      document.querySelector("[data-timer-display]")?.textContent?.trim() ??
-      "00:00:00";
 
     return {
       todayFocusMinutes: toSafeNumber(statistics.todayFocusMinutes),
       weekFocusMinutes: toSafeNumber(statistics.weekFocusMinutes),
       totalFocusMinutes: toSafeNumber(statistics.totalFocusMinutes),
       currentStreak: toSafeNumber(statistics.currentStreak),
-      timer: timerText || "00:00:00",
     };
-  }
-
-  function setText(selector, value) {
-    const element = document.querySelector(selector);
-    if (element) element.textContent = value;
   }
 
   function renderPosterMeasure(selector, formattedValue) {
@@ -71,7 +70,22 @@
     renderPosterMeasure("[data-poster-week]", formatPosterDuration(data.weekFocusMinutes));
     renderPosterMeasure("[data-poster-total]", formatPosterDuration(data.totalFocusMinutes));
     renderPosterMeasure("[data-poster-streak]", formatPosterDays(data.currentStreak));
-    setText("[data-poster-timer]", data.timer);
+
+    const weeklyRemainingSlot = document.querySelector(
+      "[data-poster-weekly-remaining]",
+    );
+    if (!weeklyRemainingSlot) return;
+
+    const remainingMinutes = getWeeklyRemainingMinutes(data.weekFocusMinutes);
+    const isComplete = remainingMinutes <= 0;
+    weeklyRemainingSlot.hidden = isComplete;
+    weeklyRemainingSlot.setAttribute("aria-hidden", String(isComplete));
+    if (!isComplete) {
+      renderPosterMeasure(
+        "[data-poster-weekly-remaining-value]",
+        formatPosterDuration(remainingMinutes),
+      );
+    }
   }
 
   // html2canvas 可用时优先捕获 HTML/CSS 预览；离线或 CDN 被拦截时，
@@ -90,6 +104,42 @@
       context.textAlign = "center";
       context.textBaseline = "middle";
       context.fillText(text, centerX, y);
+    };
+    const drawMeasure = (text, y, numberFont, unitFont, numberColor, unitColor) => {
+      const tokens = String(text).trim().split(/\s+/);
+      const pairs = [];
+      const pairGap = 8;
+      const measureGap = 18;
+
+      for (let index = 0; index < tokens.length; index += 2) {
+        const number = tokens[index];
+        const unit = tokens[index + 1] ?? "";
+        context.font = numberFont;
+        const numberWidth = context.measureText(number).width;
+        context.font = unitFont;
+        const unitWidth = context.measureText(unit).width;
+        pairs.push({ number, unit, numberWidth, unitWidth });
+      }
+
+      const totalWidth = pairs.reduce(
+        (sum, pair) => sum + pair.numberWidth + pairGap + pair.unitWidth,
+        0,
+      ) + Math.max(0, pairs.length - 1) * measureGap;
+      let x = centerX - totalWidth / 2;
+
+      pairs.forEach((pair, index) => {
+        context.textAlign = "left";
+        context.textBaseline = "alphabetic";
+        context.font = numberFont;
+        context.fillStyle = numberColor;
+        context.fillText(pair.number, x, y);
+        x += pair.numberWidth + pairGap;
+        context.font = unitFont;
+        context.fillStyle = unitColor;
+        context.fillText(pair.unit, x, y);
+        x += pair.unitWidth;
+        if (index < pairs.length - 1) x += measureGap;
+      });
     };
     const drawRule = (y) => {
       const gradient = context.createLinearGradient(100, y, 980, y);
@@ -292,9 +342,18 @@
       }
     });
 
-    drawRule(1120);
-    drawCenteredText("沉浸此刻", 1205, "400 22px STSong, Songti SC, serif", "rgba(208, 229, 207, 0.56)");
-    drawCenteredText(data.timer, 1310, "200 82px Avenir Next, Arial, sans-serif", "#f0f2e8");
+    const remainingMinutes = getWeeklyRemainingMinutes(data.weekFocusMinutes);
+    if (remainingMinutes > 0) {
+      drawCenteredText("本周还需专注", 1205, "400 22px STSong, Songti SC, serif", "rgba(208, 229, 207, 0.56)");
+      drawMeasure(
+        formatPosterDuration(remainingMinutes),
+        1310,
+        "400 48px Georgia, serif",
+        "500 16px Avenir Next, Arial, sans-serif",
+        "#f0f2e8",
+        "rgba(208, 229, 207, 0.62)",
+      );
+    }
     drawCenteredText("·  Daily Focus Share  ·", 1830, "500 18px Avenir Next, Arial, sans-serif", "rgba(184, 215, 185, 0.72)");
 
     return canvas;
@@ -456,8 +515,18 @@
       );
     });
 
-    drawCenteredText("沉浸此刻", 1180, "400 20px STSong, Songti SC, serif", "rgba(219, 218, 185, 0.46)");
-    drawCenteredText(data.timer, 1264, "300 70px Avenir Next, Arial, sans-serif", "rgba(238, 239, 223, 0.82)");
+    const remainingMinutes = getWeeklyRemainingMinutes(data.weekFocusMinutes);
+    if (remainingMinutes > 0) {
+      drawCenteredText("本周还需专注", 1180, "400 20px STSong, Songti SC, serif", "rgba(219, 218, 185, 0.46)");
+      drawMeasure(
+        formatPosterDuration(remainingMinutes),
+        1264,
+        "400 50px Georgia, serif",
+        "500 16px Avenir Next, Arial, sans-serif",
+        "rgba(238, 239, 223, 0.88)",
+        "rgba(217, 218, 185, 0.58)",
+      );
+    }
     drawCenteredText("·  Daily Focus Share  ·", 1835, "500 17px Avenir Next, Arial, sans-serif", "rgba(195, 202, 173, 0.42)");
 
     context.save();

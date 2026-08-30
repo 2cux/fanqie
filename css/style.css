@@ -1073,7 +1073,7 @@ body[data-page-visible="false"] .focus-atmosphere > .focus-atmosphere__flow {
 .share-poster__brand,
 .share-poster__today,
 .share-poster__stats,
-.share-poster__timer,
+.share-poster__weekly-remaining,
 .share-poster__footer,
 .share-poster__rule {
   position: absolute;
@@ -1138,7 +1138,7 @@ body[data-page-visible="false"] .focus-atmosphere > .focus-atmosphere__flow {
 .share-poster__tagline,
 .share-poster__today p,
 .share-poster__stats p,
-.share-poster__timer p,
+.share-poster__weekly-remaining p,
 .share-poster__footer p {
   margin: 0;
 }
@@ -1173,7 +1173,7 @@ body[data-page-visible="false"] .focus-atmosphere > .focus-atmosphere__flow {
   letter-spacing: 0.27em;
 }
 
-.share-poster__timer p {
+.share-poster__weekly-remaining p {
   color: rgba(208, 229, 207, 0.52);
   font-family: "STSong", "Songti SC", SimSun, serif;
   font-size: 0.58rem;
@@ -1255,25 +1255,32 @@ body[data-page-visible="false"] .focus-atmosphere > .focus-atmosphere__flow {
   white-space: nowrap;
 }
 
-.share-poster__rule--timer {
-  top: 77.3%;
-}
-
-.share-poster__timer {
+.share-poster__weekly-remaining {
   top: 79.9%;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
 }
 
-.share-poster__timer time {
-  display: block;
-  margin-top: 7px;
+.share-poster__weekly-remaining strong {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  margin-top: 8px;
   color: #f0f2e8;
-  font-family: "Avenir Next", Inter, sans-serif;
-  font-size: clamp(2.25rem, 10vw, 3.2rem);
-  font-weight: 200;
-  letter-spacing: -0.08em;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.5rem;
+  font-weight: 400;
   line-height: 1;
   white-space: nowrap;
-  text-shadow: 0 0 20px rgba(166, 220, 168, 0.15);
+}
+
+.share-poster__weekly-remaining .share-poster__measure {
+  gap: 0.28em;
+}
+
+.share-poster__weekly-remaining[hidden] {
+  display: none !important;
 }
 
 .share-poster__footer {
@@ -2395,10 +2402,6 @@ body[data-page-visible="false"] .focus-atmosphere > .focus-atmosphere__flow {
     font-size: 1.38rem;
   }
 
-  .share-poster__timer time {
-    font-size: 2.42rem;
-  }
-
   .app-header {
     min-height: 88px;
   }
@@ -2667,7 +2670,7 @@ body[data-page-visible="false"] .focus-atmosphere > .focus-atmosphere__flow {
 .share-poster__brand,
 .share-poster__today,
 .share-poster__stats,
-.share-poster__timer,
+.share-poster__weekly-remaining,
 .share-poster__footer,
 .share-poster__rule {
   z-index: 3;
@@ -2841,35 +2844,38 @@ body[data-page-visible="false"] .focus-atmosphere > .focus-atmosphere__flow {
   white-space: nowrap;
 }
 
-.share-poster__rule--timer {
-  display: none;
-}
-
-.share-poster__timer {
+.share-poster__weekly-remaining {
   top: 68%;
   left: 10%;
   width: 80%;
-  opacity: 0.7;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
 }
 
-.share-poster__timer p {
+.share-poster__weekly-remaining p {
   color: rgba(219, 218, 185, 0.46);
   font-family: "STSong", "Songti SC", SimSun, serif;
   font-size: 0.53rem;
   letter-spacing: 0.2em;
 }
 
-.share-poster__timer time {
-  display: block;
+.share-poster__weekly-remaining strong {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
   margin-top: 8px;
-  color: rgba(238, 239, 223, 0.82);
-  font-family: "Avenir Next", Inter, sans-serif;
-  font-size: clamp(1.55rem, 6.4vw, 2.45rem);
-  font-variant-numeric: tabular-nums;
-  font-weight: 300;
-  letter-spacing: 0.045em;
+  color: rgba(238, 239, 223, 0.88);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.5rem;
+  font-variant-numeric: lining-nums tabular-nums;
+  font-weight: 400;
   line-height: 1;
-  text-shadow: 0 0 18px rgba(150, 211, 148, 0.12);
+  white-space: nowrap;
+}
+
+.share-poster__weekly-remaining .share-poster__measure {
+  gap: 0.28em;
 }
 
 .share-poster__footer {
