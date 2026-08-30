@@ -2,8 +2,6 @@
   "use strict";
 
   const { loadData, updateData } = global.FocusCoreStorage;
-  const DAYS_IN_WEEK = 7;
-
   function formatDateKey(date) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -36,6 +34,10 @@
 
   function shiftDate(date, days) {
     return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+  }
+
+  function getStartOfWeek(date) {
+    return shiftDate(date, -date.getDay());
   }
 
   function getDailyMinutes(records, date) {
@@ -92,11 +94,16 @@
       referenceDate,
     );
     let weekFocusMinutes = 0;
+    const weekStart = getStartOfWeek(referenceDate);
 
-    for (let dayOffset = 0; dayOffset < DAYS_IN_WEEK; dayOffset += 1) {
+    for (
+      let cursor = weekStart;
+      cursor <= referenceDate;
+      cursor = shiftDate(cursor, 1)
+    ) {
       weekFocusMinutes += getDailyMinutes(
         data.dailyRecords,
-        shiftDate(referenceDate, -dayOffset),
+        cursor,
       );
     }
 

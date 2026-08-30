@@ -450,3 +450,51 @@ test("已有未来备注在读取和月份切换所需的重新渲染中保持�
   });
   assert.equal(runtime.context.FocusCoreStorage.loadData().permanentData.totalFocusMinutes, 18);
 });
+
+test("每周专注从周日凌晨开始计算，并在周日排除上周记录", () => {
+  const weekSunday = new Date();
+  weekSunday.setHours(0, 0, 0, 0);
+  weekSunday.setDate(weekSunday.getDate() - weekSunday.getDay());
+
+  const dateKeyAt = (dayOffset) => {
+    const date = new Date(weekSunday);
+    date.setDate(date.getDate() + dayOffset);
+    return localDateKey(date);
+  };
+  const values = new Map([
+    [
+      "focus-core.state.v4",
+      JSON.stringify({
+        version: 4,
+        data: {
+          permanentData: { totalFocusMinutes: 150 },
+          dailyRecords: {
+            [dateKeyAt(-1)]: { focusMinutes: 90 },
+            [dateKeyAt(0)]: { focusMinutes: 10 },
+            [dateKeyAt(1)]: { focusMinutes: 20 },
+            [dateKeyAt(6)]: { focusMinutes: 30 },
+          },
+          userState: {},
+        },
+        timer: {
+          state: "idle",
+          elapsedSeconds: 0,
+          startedAt: null,
+          creditedMinutes: 0,
+          timerDate: localDateKey(),
+        },
+      }),
+    ],
+  ]);
+  const runtime = createRuntime(values);
+  const statistics = runtime.context.FocusCoreStatistics;
+
+  assert.equal(
+    statistics.getStatistics(dateKeyAt(0)).weekFocusMinutes,
+    10,
+  );
+  assert.equal(
+    statistics.getStatistics(dateKeyAt(6)).weekFocusMinutes,
+    60,
+  );
+});
