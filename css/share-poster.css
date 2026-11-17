@@ -1,0 +1,36 @@
+/* Share-only composition; em sizing follows the preview's actual width. */
+.share-poster { font-size: 16px; }
+.share-poster::after {
+  inset: 4%;
+  z-index: 1;
+  border: 1px solid rgba(83, 112, 71, 0.16);
+  background: none;
+  opacity: 1;
+  mix-blend-mode: normal;
+}
+.share-poster__brand { top: 5.5%; }
+.share-poster__emblem { display: block; width: 6.4em; height: auto; margin: 0 auto 0.65em; }
+.share-poster__eyebrow { font-size: 0.48em; }
+.share-poster__brand h3 { margin: 0.35em 0; font-size: 1.5em; letter-spacing: 0.22em; }
+.share-poster__tagline { font-size: 0.56em; }
+.share-poster__today { top: 32.5%; left: 7%; width: 86%; }
+.share-poster__today p { font-size: 0.55em; letter-spacing: 0.2em; }
+.share-poster__today strong { margin-top: 0.32em; font-size: 3em; }
+.share-poster__today .share-poster__unit { font-size: 0.23em; }
+.share-poster__today .share-poster__caption {
+  margin-top: 1.8em;
+  font-family: "STSong", "Songti SC", SimSun, serif;
+  font-size: 0.58em;
+  letter-spacing: 0.13em;
+  color: #6e7d59;
+}
+.share-poster__rule { top: 53.5%; left: 12%; width: 76%; background: #82957130; }
+.share-poster__stats { top: 59%; left: 10%; width: 80%; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; }
+.share-poster__stats > div { padding: 0 0.4em; }
+.share-poster__stats > div + div { border-left: 1px solid #82957130; }
+.share-poster__stats p { min-height: 0; font-size: 0.46em; letter-spacing: 0.08em; }
+.share-poster__stats strong { margin-top: 0.65em; font-size: 1.2em; flex-wrap: wrap; row-gap: 0.2em; }
+.share-poster__stats .share-poster__measure-pair { white-space: nowrap; }
+.share-poster__footer { bottom: 9%; display: flex; flex-direction: column; gap: 2.8em; }
+.share-poster__footer p { font-size: 0.4em; letter-spacing: 0.24em; }
+.share-poster__footer .share-poster__closing { font-family: "STSong", "Songti SC", SimSun, serif; font-size: 0.7em; letter-spacing: 0.15em; color: #31543f; }

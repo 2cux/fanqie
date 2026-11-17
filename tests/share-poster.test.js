@@ -47,56 +47,26 @@ function loadShareModule(elements = {}) {
   return context.FocusCoreShare;
 }
 
-test("weekly remaining time uses the fixed 30-hour target", () => {
-  const weeklyRemaining = new FakeElement();
-  const weeklyRemainingValue = new FakeElement();
+test("share renders only today's focus, weekly focus and total focus", () => {
+  const today = new FakeElement(), week = new FakeElement(), total = new FakeElement();
   const share = loadShareModule({
-    "[data-poster-weekly-remaining]": weeklyRemaining,
-    "[data-poster-weekly-remaining-value]": weeklyRemainingValue,
+    "[data-poster-today]": today, "[data-poster-week]": week, "[data-poster-total]": total,
   });
-
-  share.renderPoster({
-    todayFocusMinutes: 269,
-    weekFocusMinutes: 14 * 60 + 12,
-    totalFocusMinutes: 1000,
-    currentStreak: 3,
-  });
-
-  assert.equal(weeklyRemaining.hidden, false);
-  assert.equal(weeklyRemaining.getAttribute("aria-hidden"), "false");
-  assert.equal(weeklyRemainingValue.getAttribute("aria-label"), "15 h 48 min");
-  assert.deepEqual(
-    weeklyRemainingValue.children.map((measure) =>
-      measure.children.map((part) => part.textContent),
-    ),
-    [["15", "h"], ["48", "min"]],
-  );
+  share.renderPoster({ todayFocusMinutes: 181, weekFocusMinutes: 421, totalFocusMinutes: 22009, currentStreak: 83 });
+  assert.equal(today.getAttribute("aria-label"), "3 h 01 min");
+  assert.equal(week.getAttribute("aria-label"), "7 h 01 min");
+  assert.equal(total.getAttribute("aria-label"), "366 h 49 min");
+  share.renderPoster({});
+  assert.equal(today.getAttribute("aria-label"), "0 min");
 });
 
-test("weekly remaining area is hidden at and above the target", () => {
-  const weeklyRemaining = new FakeElement();
-  const weeklyRemainingValue = new FakeElement();
-  const share = loadShareModule({
-    "[data-poster-weekly-remaining]": weeklyRemaining,
-    "[data-poster-weekly-remaining-value]": weeklyRemainingValue,
-  });
-
-  for (const weekFocusMinutes of [30 * 60, 30 * 60 + 1]) {
-    share.renderPoster({ weekFocusMinutes });
-    assert.equal(weeklyRemaining.hidden, true);
-    assert.equal(weeklyRemaining.getAttribute("aria-hidden"), "true");
-  }
-});
-
-test("share poster no longer contains the live timer presentation", () => {
+test("streak and remaining goals are excluded from both export paths", () => {
   const html = fs.readFileSync(path.resolve(__dirname, "../index.html"), "utf8");
   const poster = html.slice(html.indexOf('data-share-poster'), html.indexOf("</article>", html.indexOf('data-share-poster')));
-  const shareCss = fs.readFileSync(path.resolve(__dirname, "../css/style.css"), "utf8");
-  const shareJs = fs.readFileSync(path.resolve(__dirname, "../js/share.js"), "utf8");
-
-  assert.match(poster, /data-poster-weekly-remaining/);
-  assert.match(poster, /本周还需专注/);
-  assert.doesNotMatch(poster, /沉浸此刻|data-poster-timer|share-poster__timer|rule--timer/);
-  assert.doesNotMatch(shareCss, /share-poster__timer|share-poster__rule--timer/);
-  assert.doesNotMatch(shareJs, /沉浸此刻|data-poster-timer|data-timer-display/);
+  const js = fs.readFileSync(path.resolve(__dirname, "../js/share.js"), "utf8");
+  assert.doesNotMatch(poster, /data-poster-streak|data-poster-weekly-remaining|data-poster-timer/);
+  assert.doesNotMatch(js, /currentStreak|weeklyRemaining|WEEKLY_FOCUS_TARGET/);
+  assert.match(poster, /data-poster-today/);
+  assert.match(poster, /data-poster-week/);
+  assert.match(poster, /data-poster-total/);
 });
