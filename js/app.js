@@ -45,6 +45,8 @@
       "[data-weekly-remaining-value]",
     );
     const todayStat = document.querySelector("[data-stat-today]");
+    const weeklyProgress = document.querySelector("[data-weekly-progress]");
+    const weeklyComplete = document.querySelector("[data-weekly-complete]");
     const weekStat = document.querySelector("[data-stat-week]");
     const totalStat = document.querySelector("[data-stat-total]");
     const streakStat = document.querySelector("[data-stat-streak]");
@@ -152,6 +154,12 @@
         WEEKLY_FOCUS_TARGET_MINUTES - weeklyFocusMinutes,
       );
       const isComplete = remainingMinutes <= 0;
+
+      if (weeklyProgress) {
+        weeklyProgress.value = Math.max(0, Math.min(WEEKLY_FOCUS_TARGET_MINUTES, weeklyFocusMinutes));
+        weeklyProgress.setAttribute("aria-valuetext", `本周已专注 ${formatDuration(weeklyFocusMinutes)}，目标 35 小时`);
+      }
+      if (weeklyComplete) weeklyComplete.hidden = !isComplete;
 
       weeklyRemainingSlot.classList.toggle("is-hidden", isComplete);
       weeklyRemainingSlot.setAttribute("aria-hidden", String(isComplete));

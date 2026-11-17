@@ -314,7 +314,7 @@
     context.shadowBlur = 0;
 
     drawCenteredText("A  Q U I E T  P L A C E", 245, "500 22px Avenir Next, Arial, sans-serif", "rgba(189, 220, 193, 0.8)");
-    drawCenteredText("静心一隅", 315, "400 58px STSong, Songti SC, serif", "#f0f2e8");
+    drawCenteredText("专注栖所", 315, "400 58px STSong, Songti SC, serif", "#f0f2e8");
     drawCenteredText("收拢微光  ·  安住此刻", 374, "400 20px STSong, Songti SC, serif", "rgba(188, 214, 188, 0.66)");
 
     drawCenteredText("T O D A Y  F O C U S", 650, "500 20px Avenir Next, Arial, sans-serif", "rgba(202, 227, 204, 0.76)");
@@ -426,9 +426,9 @@
       context.shadowBlur = 0;
     };
     const background = context.createLinearGradient(0, 0, 0, canvas.height);
-    background.addColorStop(0, "#06140e");
-    background.addColorStop(0.48, "#0a2118");
-    background.addColorStop(1, "#07150f");
+    background.addColorStop(0, "#faf5e7");
+    background.addColorStop(0.48, "#e7edda");
+    background.addColorStop(1, "#dae5cf");
     context.fillStyle = background;
     context.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -441,8 +441,8 @@
 
     const atmosphere = context.createLinearGradient(0, 1320, 0, 1920);
     atmosphere.addColorStop(0, "rgba(8, 34, 23, 0)");
-    atmosphere.addColorStop(0.45, "rgba(5, 23, 15, 0.14)");
-    atmosphere.addColorStop(1, "rgba(2, 11, 8, 0.44)");
+    atmosphere.addColorStop(0.45, "rgba(142, 172, 107, 0.07)");
+    atmosphere.addColorStop(1, "rgba(142, 172, 107, 0.15)");
     context.fillStyle = atmosphere;
     context.fillRect(0, 1320, 1080, 600);
 
@@ -483,12 +483,12 @@
     context.fill();
     context.shadowBlur = 0;
 
-    drawCenteredText("A  Q U I E T  P L A C E", 226, "500 20px Avenir Next, Arial, sans-serif", "rgba(220, 219, 183, 0.72)");
-    drawCenteredText("静心一隅", 286, "400 56px STSong, Songti SC, serif", "#f3f0df");
-    drawCenteredText("收拢微光  ·  安住此刻", 339, "400 19px STSong, Songti SC, serif", "rgba(202, 216, 188, 0.56)");
+    drawCenteredText("A  Q U I E T  P L A C E", 226, "500 20px Avenir Next, Arial, sans-serif", "#627650");
+    drawCenteredText("专注栖所", 286, "400 56px STSong, Songti SC, serif", "#31543f");
+    drawCenteredText("收拢微光  ·  安住此刻", 339, "400 19px STSong, Songti SC, serif", "#6e7d59");
 
-    drawCenteredText("T O D A Y  F O C U S", 620, "500 19px Avenir Next, Arial, sans-serif", "rgba(221, 220, 183, 0.66)");
-    drawMeasure(formatPosterDuration(data.todayFocusMinutes), 702, "400 57px Georgia, serif", "500 22px Avenir Next, Arial, sans-serif", "#f4f0dd", "rgba(217, 218, 185, 0.48)");
+    drawCenteredText("T O D A Y  F O C U S", 620, "500 19px Avenir Next, Arial, sans-serif", "#627650");
+    drawMeasure(formatPosterDuration(data.todayFocusMinutes), 702, "400 57px Georgia, serif", "500 22px Avenir Next, Arial, sans-serif", "#31543f", "#6e7d59");
     drawSoftRule(790);
 
     const columns = [188, 540, 892];
@@ -502,35 +502,35 @@
       context.textAlign = "center";
       context.textBaseline = "middle";
       context.font = "500 14px Avenir Next, Arial, sans-serif";
-      context.fillStyle = "rgba(221, 220, 183, 0.62)";
+      context.fillStyle = "#627650";
       context.fillText(labels[index], x, 882);
       drawMeasure(
         values[index],
         960,
         "400 30px Georgia, serif",
         "500 12px Avenir Next, Arial, sans-serif",
-        "rgba(240, 239, 218, 0.88)",
-        "rgba(217, 218, 185, 0.48)",
+        "#31543f",
+        "#6e7d59",
         x,
       );
     });
 
     const remainingMinutes = getWeeklyRemainingMinutes(data.weekFocusMinutes);
     if (remainingMinutes > 0) {
-      drawCenteredText("本周还需专注", 1180, "400 20px STSong, Songti SC, serif", "rgba(219, 218, 185, 0.46)");
+      drawCenteredText("本周还需专注", 1180, "400 20px STSong, Songti SC, serif", "#6e7d59");
       drawMeasure(
         formatPosterDuration(remainingMinutes),
         1264,
         "400 50px Georgia, serif",
         "500 16px Avenir Next, Arial, sans-serif",
-        "rgba(238, 239, 223, 0.88)",
-        "rgba(217, 218, 185, 0.58)",
+        "#31543f",
+        "#6e7d59",
       );
     }
-    drawCenteredText("·  Daily Focus Share  ·", 1835, "500 17px Avenir Next, Arial, sans-serif", "rgba(195, 202, 173, 0.42)");
+    drawCenteredText("·  Daily Focus Share  ·", 1835, "500 17px Avenir Next, Arial, sans-serif", "#6e7d59");
 
     context.save();
-    context.strokeStyle = "rgba(160, 205, 157, 0.1)";
+    context.strokeStyle = "rgba(111, 141, 83, 0.2)";
     context.lineWidth = 1;
     [1430, 1535, 1654, 1785].forEach((y, index) => {
       context.beginPath();
@@ -657,7 +657,7 @@
         const canvas =
           typeof html2canvas === "function"
             ? await html2canvas(poster, {
-                backgroundColor: "#07130f",
+                backgroundColor: "#faf5e7",
                 height: poster.clientHeight,
                 logging: false,
                 scale: Math.min(3, Math.max(2, global.devicePixelRatio || 1)),

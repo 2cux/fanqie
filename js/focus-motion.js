@@ -19,6 +19,7 @@
   ]);
 
   const CORE_ANIMATIONS = new Set([
+    "daylight-orbit",
     "focus-halo-breathe",
     "aura-drift-one",
     "aura-drift-two",

@@ -1,13 +1,13 @@
 (function (global) {
   "use strict";
-  // Design Bookmark magnetic-button: original stiffness/damping and pull radius.
+  // A small, damped pull keeps the primary action steady and easy to reach.
   global.createFocusMagnet = function (button) {
     const label = button.querySelector("span");
     const reduced = matchMedia("(prefers-reduced-motion: reduce)");
     const spring = (x, k, c) => ({ x, t: x, v: 0, k, c });
-    const bx = spring(0, 170, 13), by = spring(0, 170, 13);
+    const bx = spring(0, 170, 22), by = spring(0, 170, 22);
     const lx = spring(0, 220, 15), ly = spring(0, 220, 15);
-    const scale = spring(1, 400, 18), springs = [bx, by, lx, ly, scale];
+    const scale = spring(1, 400, 30), springs = [bx, by, lx, ly, scale];
     let frame = 0, last = 0, pull = 0, pressed = false;
     const listeners = [];
     function on(target, event, handler) {
@@ -50,19 +50,19 @@
       const dx = e.clientX - (r.left + r.width / 2 - bx.x);
       const dy = e.clientY - (r.top + r.height / 2 - by.x);
       const d = Math.hypot(dx, dy);
-      pull = d < 130 ? 1 - d / 130 * .35 : 0;
-      bx.t = dx * .32 * pull; by.t = dy * .38 * pull;
-      lx.t = dx * .14 * pull; ly.t = dy * .18 * pull;
-      scale.t = pressed ? .94 : 1 + .06 * pull;
+      pull = Math.max(0, 1 - d / 120);
+      bx.t = dx * .12 * pull; by.t = dy * .12 * pull;
+      lx.t = dx * .04 * pull; ly.t = dy * .04 * pull;
+      scale.t = pressed ? .97 : 1 + .02 * pull;
       wake();
     });
     on(button, "pointerdown", e => {
       if (e.button !== 0 || reduced.matches) return;
-      pressed = true; scale.t = .94; wake();
+      pressed = true; scale.t = .97; wake();
     });
     on(global, "pointerup", () => {
       if (!pressed) return;
-      pressed = false; scale.t = 1 + .06 * pull; scale.v = 3; wake();
+      pressed = false; scale.t = 1 + .02 * pull; scale.v = .3; wake();
     });
     on(global, "pointercancel", () => reset());
     on(document.documentElement, "pointerleave", () => reset());

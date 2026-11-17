@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0d1411" />
+    <meta name="theme-color" content="#f6f5ef" />
     <meta
       name="description"
       content="一处安静收拢心神与专注时间的个人空间。"
@@ -15,6 +15,7 @@
     />
     <title>专注栖所</title>
     <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="./css/daylight.css" />
   </head>
   <body data-focus-state="idle">
     <div class="ambient-background" aria-hidden="true">
@@ -28,11 +29,11 @@
       <header class="app-header">
         <div class="brand">
           <span class="brand__mark" aria-hidden="true">
-            <img src="./assets/logo.png" alt="" />
+            <img src="./assets/favicon.svg" alt="" />
           </span>
           <div>
             <p class="eyebrow">A QUIET PLACE</p>
-            <h1 class="app-title">静心一隅</h1>
+            <h1 class="app-title">专注栖所</h1>
           </div>
         </div>
 
@@ -57,7 +58,7 @@
             aria-expanded="false"
             title="设置"
           >
-            <span aria-hidden="true">◌</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3" fill="var(--color-bg)"/><circle cx="15" cy="17" r="3" fill="var(--color-bg)"/></svg>
           </button>
         </div>
       </header>
@@ -69,7 +70,7 @@
           <aside class="stats-stack stats-stack--left" aria-labelledby="data-title">
             <article class="stat-card">
               <span class="stat-card__index">01</span>
-              <p>TODAY FOCUS</p>
+              <p>今日专注 <small>TODAY</small></p>
               <strong>
                 <span class="stat-card__value" data-stat-today aria-label="0 min">
                   <span class="stat-card__measure" aria-hidden="true">
@@ -82,7 +83,7 @@
             </article>
             <article class="stat-card">
               <span class="stat-card__index">03</span>
-              <p>TOTAL FOCUS</p>
+              <p>累计专注 <small>TOTAL</small></p>
               <strong>
                 <span class="stat-card__value" data-stat-total aria-label="0 min">
                   <span class="stat-card__measure" aria-hidden="true">
@@ -97,9 +98,9 @@
 
           <div class="focus-center">
             <div class="core-caption">
-              <span>收拢微光</span>
+              <span>让注意力，慢慢归位</span>
               <i aria-hidden="true"></i>
-              <span>安住此刻</span>
+              <span>A MOMENT FOR YOU</span>
             </div>
 
             <div
@@ -107,22 +108,13 @@
               data-focus-atmosphere
               data-focus-state="idle"
             >
-              <!-- 保留与专注状态绑定的柔和环境光，不再承载任何数值。 -->
+              <!-- 光环围绕当前计时展开；周目标独立呈现在下方。 -->
               <div class="focus-atmosphere__aura" aria-hidden="true">
                 <i></i><i></i><i></i>
               </div>
               <div class="focus-atmosphere__flow" aria-hidden="true">
                 <i></i><i></i><i></i><i></i>
               </div>
-              <div class="weekly-focus-remaining" data-weekly-remaining-slot>
-                <span class="weekly-focus-remaining__label">本周还需专注</span>
-                <strong
-                  class="weekly-focus-remaining__value"
-                  data-weekly-remaining-value
-                ></strong>
-              </div>
-            </div>
-
             <div class="timer">
               <h2 id="timer-title" class="visually-hidden">专注计时器</h2>
               <p
@@ -137,16 +129,27 @@
                 datetime="PT0S"
                 aria-live="off"
               >00:00:00</time>
-              <button class="primary-button" data-timer-action type="button">
-                <span>进入专注</span>
-              </button>
+            </div>
+            </div>
+            <button class="primary-button" data-timer-action type="button">
+              <span>进入专注</span>
+            </button>
+            <p class="focus-invitation">从这一刻开始，每一分钟都算数。</p>
+            <div class="weekly-goal">
+              <div class="weekly-goal__heading"><span>本周的积累</span><span>目标 35 小时</span></div>
+              <progress class="weekly-goal__progress" data-weekly-progress max="2100" value="0" aria-label="本周专注目标进度"></progress>
+              <div class="weekly-focus-remaining" data-weekly-remaining-slot>
+                <span class="weekly-focus-remaining__label">距离本周目标还差</span>
+                <strong class="weekly-focus-remaining__value" data-weekly-remaining-value></strong>
+              </div>
+              <p class="weekly-goal__complete" data-weekly-complete hidden>本周目标已达成，每一份投入都有回响。</p>
             </div>
           </div>
 
           <aside class="stats-stack stats-stack--right" aria-labelledby="data-title">
             <article class="stat-card">
               <span class="stat-card__index">02</span>
-              <p>WEEKLY FOCUS</p>
+              <p>本周专注 <small>THIS WEEK</small></p>
               <strong>
                 <span class="stat-card__value" data-stat-week aria-label="0 min">
                   <span class="stat-card__measure" aria-hidden="true">
@@ -159,7 +162,7 @@
             </article>
             <article class="stat-card">
               <span class="stat-card__index">04</span>
-              <p>STREAK</p>
+              <p>连续专注 <small>STREAK</small></p>
               <strong>
                 <span class="stat-card__value" data-stat-streak aria-label="0 days">
                   <span class="stat-card__measure" aria-hidden="true">
@@ -179,6 +182,7 @@
               <p class="eyebrow">TRACES OF LIGHT</p>
               <h2 id="heatmap-title">专注日历</h2>
             </div>
+            <p>把日子，慢慢染成喜欢的颜色。<br />点击日期，留下一句记录。</p>
           </div>
 
           <div
@@ -278,7 +282,7 @@
             <header class="share-poster__brand">
               <span class="share-poster__logo" aria-hidden="true"><i></i></span>
               <p class="share-poster__eyebrow">A QUIET PLACE</p>
-              <h3>静心一隅</h3>
+              <h3>专注栖所</h3>
               <p class="share-poster__tagline">收拢微光 · 安住此刻</p>
             </header>
 
