@@ -1,0 +1,366 @@
+{
+  "totalFocusMinutes": 21828,
+  "dailyRecords": {
+    "2026-07-16": {
+      "focusMinutes": 9
+    },
+    "2026-07-17": {
+      "focusMinutes": 453
+    },
+    "2026-07-18": {
+      "focusMinutes": 5
+    },
+    "2026-08-01": {
+      "focusMinutes": 82
+    },
+    "2026-08-02": {
+      "focusMinutes": 309
+    },
+    "2026-08-03": {
+      "focusMinutes": 403
+    },
+    "2026-08-04": {
+      "focusMinutes": 234
+    },
+    "2026-08-05": {
+      "focusMinutes": 139
+    },
+    "2026-08-06": {
+      "focusMinutes": 143
+    },
+    "2026-08-17": {
+      "focusMinutes": 1
+    },
+    "2026-08-19": {
+      "focusMinutes": 79,
+      "note": "",
+      "deadline": "？"
+    },
+    "2026-08-20": {
+      "focusMinutes": 34,
+      "note": "",
+      "deadline": ""
+    },
+    "2026-08-22": {
+      "focusMinutes": 0,
+      "note": "买杂物",
+      "deadline": ""
+    },
+    "2026-08-26": {
+      "focusMinutes": 0,
+      "note": "上学",
+      "deadline": ""
+    },
+    "2026-08-27": {
+      "focusMinutes": 282,
+      "note": "",
+      "deadline": ""
+    },
+    "2026-08-28": {
+      "focusMinutes": 301,
+      "note": "",
+      "deadline": ""
+    },
+    "2026-08-29": {
+      "focusMinutes": 368,
+      "note": "",
+      "deadline": ""
+    },
+    "2026-08-30": {
+      "focusMinutes": 240,
+      "note": "",
+      "deadline": ""
+    },
+    "2026-08-31": {
+      "focusMinutes": 256,
+      "note": "选课",
+      "deadline": ""
+    },
+    "2026-09-01": {
+      "focusMinutes": 209,
+      "note": "",
+      "deadline": ""
+    },
+    "2026-09-02": {
+      "focusMinutes": 253,
+      "note": "大物补考",
+      "deadline": ""
+    },
+    "2026-09-03": {
+      "focusMinutes": 101,
+      "note": "",
+      "deadline": ""
+    },
+    "2026-09-04": {
+      "focusMinutes": 349,
+      "note": "",
+      "deadline": ""
+    },
+    "2026-09-05": {
+      "focusMinutes": 369,
+      "note": "",
+      "deadline": ""
+    },
+    "2026-09-06": {
+      "focusMinutes": 331,
+      "note": "",
+      "deadline": ""
+    },
+    "2026-09-07": {
+      "focusMinutes": 370,
+      "note": "大物实验",
+      "deadline": ""
+    },
+    "2026-09-08": {
+      "focusMinutes": 211,
+      "note": "",
+      "deadline": ""
+    },
+    "2026-09-09": {
+      "focusMinutes": 73,
+      "note": "",
+      "deadline": ""
+    },
+    "2026-09-10": {
+      "focusMinutes": 222,
+      "note": "",
+      "deadline": ""
+    },
+    "2026-09-11": {
+      "focusMinutes": 162,
+      "note": "",
+      "deadline": ""
+    },
+    "2026-09-12": {
+      "focusMinutes": 240
+    },
+    "2026-09-13": {
+      "focusMinutes": 240
+    },
+    "2026-09-14": {
+      "focusMinutes": 240
+    },
+    "2026-09-15": {
+      "focusMinutes": 240
+    },
+    "2026-09-16": {
+      "focusMinutes": 240
+    },
+    "2026-09-17": {
+      "focusMinutes": 240
+    },
+    "2026-09-18": {
+      "focusMinutes": 240
+    },
+    "2026-09-19": {
+      "focusMinutes": 240
+    },
+    "2026-09-20": {
+      "focusMinutes": 240
+    },
+    "2026-09-21": {
+      "focusMinutes": 240
+    },
+    "2026-09-22": {
+      "focusMinutes": 240,
+      "note": "选课",
+      "deadline": ""
+    },
+    "2026-09-23": {
+      "focusMinutes": 240
+    },
+    "2026-09-24": {
+      "focusMinutes": 240
+    },
+    "2026-09-25": {
+      "focusMinutes": 240
+    },
+    "2026-09-26": {
+      "focusMinutes": 240
+    },
+    "2026-09-27": {
+      "focusMinutes": 240
+    },
+    "2026-09-28": {
+      "focusMinutes": 240
+    },
+    "2026-09-29": {
+      "focusMinutes": 240
+    },
+    "2026-09-30": {
+      "focusMinutes": 240
+    },
+    "2026-10-01": {
+      "focusMinutes": 240
+    },
+    "2026-10-02": {
+      "focusMinutes": 240
+    },
+    "2026-10-03": {
+      "focusMinutes": 240
+    },
+    "2026-10-04": {
+      "focusMinutes": 240
+    },
+    "2026-10-05": {
+      "focusMinutes": 240
+    },
+    "2026-10-06": {
+      "focusMinutes": 240
+    },
+    "2026-10-07": {
+      "focusMinutes": 240
+    },
+    "2026-10-08": {
+      "focusMinutes": 240
+    },
+    "2026-10-09": {
+      "focusMinutes": 240
+    },
+    "2026-10-10": {
+      "focusMinutes": 240
+    },
+    "2026-10-11": {
+      "focusMinutes": 240
+    },
+    "2026-10-12": {
+      "focusMinutes": 240
+    },
+    "2026-10-13": {
+      "focusMinutes": 240
+    },
+    "2026-10-14": {
+      "focusMinutes": 240
+    },
+    "2026-10-15": {
+      "focusMinutes": 240
+    },
+    "2026-10-16": {
+      "focusMinutes": 240
+    },
+    "2026-10-17": {
+      "focusMinutes": 240
+    },
+    "2026-10-18": {
+      "focusMinutes": 240
+    },
+    "2026-10-19": {
+      "focusMinutes": 240
+    },
+    "2026-10-20": {
+      "focusMinutes": 240
+    },
+    "2026-10-21": {
+      "focusMinutes": 240
+    },
+    "2026-10-22": {
+      "focusMinutes": 240
+    },
+    "2026-10-23": {
+      "focusMinutes": 240
+    },
+    "2026-10-24": {
+      "focusMinutes": 240
+    },
+    "2026-10-25": {
+      "focusMinutes": 240
+    },
+    "2026-10-26": {
+      "focusMinutes": 240
+    },
+    "2026-10-27": {
+      "focusMinutes": 240
+    },
+    "2026-10-28": {
+      "focusMinutes": 240
+    },
+    "2026-10-29": {
+      "focusMinutes": 240
+    },
+    "2026-10-30": {
+      "focusMinutes": 240
+    },
+    "2026-10-31": {
+      "focusMinutes": 240
+    },
+    "2026-11-01": {
+      "focusMinutes": 240
+    },
+    "2026-11-02": {
+      "focusMinutes": 240
+    },
+    "2026-11-03": {
+      "focusMinutes": 240
+    },
+    "2026-11-04": {
+      "focusMinutes": 240
+    },
+    "2026-11-05": {
+      "focusMinutes": 240
+    },
+    "2026-11-06": {
+      "focusMinutes": 240
+    },
+    "2026-11-07": {
+      "focusMinutes": 240
+    },
+    "2026-11-08": {
+      "focusMinutes": 240
+    },
+    "2026-11-09": {
+      "focusMinutes": 240
+    },
+    "2026-11-10": {
+      "focusMinutes": 240
+    },
+    "2026-11-11": {
+      "focusMinutes": 240
+    },
+    "2026-11-12": {
+      "focusMinutes": 240
+    },
+    "2026-11-13": {
+      "focusMinutes": 240
+    },
+    "2026-11-14": {
+      "focusMinutes": 240
+    },
+    "2026-11-15": {
+      "focusMinutes": 240
+    },
+    "2026-11-16": {
+      "focusMinutes": 240
+    },
+    "2027-01-01": {
+      "focusMinutes": 0,
+      "note": "准备实习",
+      "deadline": ""
+    },
+    "2027-07-01": {
+      "focusMinutes": 0,
+      "note": "开始实习",
+      "deadline": ""
+    },
+    "2028-08-31": {
+      "focusMinutes": 0,
+      "note": "结束实习",
+      "deadline": ""
+    },
+    "2028-09-01": {
+      "focusMinutes": 0,
+      "note": "全力备考",
+      "deadline": ""
+    },
+    "2028-12-22": {
+      "focusMinutes": 0,
+      "note": "考研",
+      "deadline": ""
+    },
+    "2028-12-23": {
+      "focusMinutes": 0,
+      "note": "考研",
+      "deadline": ""
+    }
+  },
+  "sessions": []
+}
