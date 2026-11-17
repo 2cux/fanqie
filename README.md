@@ -78,6 +78,16 @@ node --test
 - 每日维护仅在前台安排；切到后台时取消，返回前台时先处理跨日统计，再安排下一次午夜维护。后台初次打开也不启动每日维护任务。
 - 回归测试包含 1 万条历史片段下的连续计时读取，以及索引在修改、删除、清空后的正确性。
 
+### Windows 进程实测
+
+在浏览器任务管理器中确认页面的进程 ID，将页面切到后台后，在 PowerShell 中运行（将 `12345` 替换为实际 ID）：
+
+```powershell
+./tests/Measure-PageProcess.ps1 -TargetProcessId 12345 -DurationSeconds 180 -IntervalSeconds 5
+```
+
+脚本只读操作系统计数器，在 `tests/performance-results/` 保存逐次 CSV 和汇总 JSON。CPU 同时报告单个逻辑核心及全机口径；物理工作集和私有提交内存均以 MiB 表示，不能等同于 JavaScript 堆。脚本不会自动切换标签页，采样时需保持目标页面在后台；同一渲染进程若承载其他页面，结果也包含它们的开销，不包含独立 GPU 进程。进程退出或 ID 被复用时中止并保存已有样本。
+
 ## 项目结构
 
 ```text
