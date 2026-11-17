@@ -284,7 +284,7 @@ test("提前结束只计算完整分钟，下段独立记录且修改运行中�
   const r = runtime();
   r.sessions.begin(r.now());
   const id = r.sessions.active().id;
-  assert.throws(() => r.sessions.edit(id, r.now() - 60000, r.now()), /先结束/);
+  assert.throws(() => r.sessions.edit(id, r.now() - 60000, r.now()), /先暂停/);
   r.advance(95000);
   r.sessions.sync(r.now(), true);
   assert.equal(r.data().permanentData.totalFocusMinutes, 1);

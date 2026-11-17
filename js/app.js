@@ -14,9 +14,9 @@
   });
 
   const ACTION_TEXT = Object.freeze({
-    [TIMER_STATES.IDLE]: "进入专注",
-    [TIMER_STATES.RUNNING]: "暂歇",
-    [TIMER_STATES.PAUSED]: "回到专注",
+    [TIMER_STATES.IDLE]: "开始专注",
+    [TIMER_STATES.RUNNING]: "暂停专注",
+    [TIMER_STATES.PAUSED]: "继续专注",
   });
 
   function formatElapsedTime(elapsedSeconds) {
@@ -291,9 +291,7 @@
 
     function renderState() {
       const statusText = STATUS_TEXT[timer.state];
-      const actionText = sessions
-        ? timer.state === TIMER_STATES.RUNNING ? "结束本段" : "开始一段专注"
-        : ACTION_TEXT[timer.state];
+      const actionText = ACTION_TEXT[timer.state];
 
       if (status.textContent !== statusText) status.textContent = statusText;
       if (actionLabel.textContent !== actionText) {

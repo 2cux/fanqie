@@ -115,7 +115,7 @@
     edit(id, start, end, now = Date.now()) {
       const sessions = storage.loadData().sessions || [];
       const old = sessions.find((s) => s.id === id);
-      if (old?.active) throw new Error("请先结束本段，再修正时间。");
+      if (old?.active) throw new Error("请先暂停专注，再修正时间。");
       if (end > now) throw new Error("结束时间不能晚于现在。");
       this.validate(start, end, id, now);
       const next = { id: id || `${now}-${Math.random().toString(36).slice(2)}`, start, end,
@@ -148,7 +148,7 @@
     remove(id) {
       const sessions = storage.loadData().sessions || [];
       const old = sessions.find((s) => s.id === id);
-      if (!old || old.active) throw new Error("请先结束本段。");
+      if (!old || old.active) throw new Error("请先暂停专注。");
       this.commit(sessions.filter((s) => s.id !== id), old, null);
       return storage.persist();
     }
