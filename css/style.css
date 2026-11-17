@@ -3067,3 +3067,6 @@ body[data-page-visible="false"] .focus-atmosphere > .focus-atmosphere__flow {
     min-width: 132px;
   }
 }
+
+/* Independent label depth for the focus button's magnetic spring. */
+[data-timer-action] > span { display: inline-block; }

@@ -59,6 +59,8 @@
     document.body.dataset.pageVisible = String(!document.hidden);
 
     const timer = new FocusTimer();
+    const actionLabel = actionButton.querySelector("span") || actionButton;
+    const magnet = global.createFocusMagnet?.(actionButton);
     const motionController = global.FocusCoreMotion
       ? new global.FocusCoreMotion.FocusMotionController(document)
       : null;
@@ -271,8 +273,8 @@
       const actionText = ACTION_TEXT[timer.state];
 
       if (status.textContent !== statusText) status.textContent = statusText;
-      if (actionButton.textContent !== actionText) {
-        actionButton.textContent = actionText;
+      if (actionLabel.textContent !== actionText) {
+        actionLabel.textContent = actionText;
       }
       if (actionButton.dataset.state !== timer.state) {
         actionButton.dataset.state = timer.state;
@@ -443,6 +445,7 @@
       destroy() {
         if (destroyed) return;
         destroyed = true;
+        magnet?.destroy();
         flushBeforeClose();
         window.clearTimeout(persistenceCheckpointId);
         window.clearTimeout(noticeTimeoutId);
@@ -481,3 +484,4 @@
   global[APP_LIFECYCLE_KEY] = lifecycle;
   enterPage();
 })(window);
+
