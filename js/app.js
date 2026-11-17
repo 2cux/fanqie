@@ -279,7 +279,7 @@
     function renderTimer(now = Date.now()) {
       const previousState = timer.state;
       if (sessions) creditCompletedMinutes(now);
-      const elapsedSeconds = sessions ? sessions.elapsed(now) : timer.getElapsedSeconds(now);
+      const elapsedSeconds = sessions ? sessions.displayElapsed(now) : timer.getElapsedSeconds(now);
       const displayText = formatElapsedTime(elapsedSeconds);
       const dateTime = `PT${Math.floor(elapsedSeconds)}S`;
 

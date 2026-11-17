@@ -144,6 +144,27 @@ test('同日后台恢复仍计入离开期间的分钟', () => {
   assert.equal(r.stats().totalFocusMinutes, 5);
 });
 
+test('中央计时在多次暂停后连续显示，休息时间不计入', () => {
+  const r = runtime(new Date(2026, 10, 17, 10).getTime());
+  r.start();
+  r.advance(95000);
+  r.start(); // Pause.
+  assert.equal(r.display.textContent, '00:01:35');
+  r.advance(10 * 60000);
+  r.start(); // Resume in a new independently credited segment.
+  assert.equal(r.display.textContent, '00:01:35');
+  r.advance(45000);
+  r.start();
+  assert.equal(r.display.textContent, '00:02:20');
+  r.advance(60000);
+  r.start();
+  assert.equal(r.display.textContent, '00:02:20');
+  r.advance(60020);
+  assert.equal(r.display.textContent, '00:03:20');
+  assert.equal(r.stats().totalFocusMinutes, 2);
+  assert.equal(r.data().sessions.length, 3);
+});
+
 test('前台每日维护照常跨日并仅安排下一次；后台旧回调不会重启任务', () => {
   const r = runtime(new Date(2026, 10, 17, 23, 59, 30).getTime());
   r.advance(31000);

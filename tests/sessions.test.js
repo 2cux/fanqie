@@ -131,6 +131,32 @@ function runtime(values = new Map(), initial = new Date(2026, 10, 17, 10).getTim
     save: () => context.FocusCoreStorage.persist() };
 }
 
+test("连续显示在刷新和时长修正后保留，下一天新片段重新计时", () => {
+  const r = runtime();
+  r.sessions.begin(r.now());
+  r.advance(95000);
+  r.sessions.sync(r.now(), true);
+  r.advance(60000);
+  r.sessions.begin(r.now());
+  r.advance(25000);
+  r.save();
+  const restored = runtime(r.values, r.now());
+  assert.equal(restored.sessions.displayElapsed(), 120);
+  assert.equal(restored.sessions.elapsed(), 25);
+  restored.sessions.adjustElapsed(60, restored.sessions.active().id);
+  assert.equal(restored.sessions.displayElapsed(), 155);
+  assert.equal(restored.data().permanentData.totalFocusMinutes, 2);
+  restored.sessions.sync(restored.now(), true);
+  const paused = runtime(restored.values, restored.now() + 60000);
+  assert.equal(paused.sessions.displayElapsed(), 155);
+  paused.sessions.begin(paused.now());
+  assert.equal(paused.sessions.displayElapsed(), 155);
+  paused.sessions.sync(paused.now(), true);
+  paused.advance(24 * 60 * 60000);
+  paused.sessions.begin(paused.now());
+  assert.equal(paused.sessions.displayElapsed(), 0);
+});
+
 test("大量历史记录下每秒计时不序列化完整历史，也不写入存储", () => {
   const r = runtime();
   const history = Array.from({ length: 10000 }, (_, i) => ({

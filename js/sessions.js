@@ -38,6 +38,12 @@
       const current = storage.loadSession();
       return current ? effectiveSeconds(current, now) : 0;
     }
+    displayElapsed(now = Date.now()) {
+      const current = storage.loadSession();
+      if (!current) return 0;
+      return effectiveSeconds(current, now) +
+        (Number.isFinite(current.displayOffsetSeconds) ? Math.max(0, current.displayOffsetSeconds) : 0);
+    }
     commit(sessions, oldSession, nextSession) {
       const data = storage.loadData();
       const before = oldSession ? allocation(oldSession) : {};
@@ -71,7 +77,12 @@
       if (!Number.isFinite(start) || start > now || start < now - 364 * 24 * 60 * 60000) {
         throw new Error("请选择有效的开始时间。");
       }
-      const session = { id: `${now}-${Math.random().toString(36).slice(2)}`, start, end, credited: 0, active: true };
+      const previous = storage.loadSession();
+      // Carry the displayed time across same-day breaks without crediting it again.
+      const displayOffsetSeconds = previous && key(previous.end) === key(start)
+        ? this.displayElapsed(now) : 0;
+      const session = { id: `${now}-${Math.random().toString(36).slice(2)}`, start, end, credited: 0,
+        active: true, displayOffsetSeconds };
       storage.updateData({ sessions: [...(storage.loadData().sessions || []), session] });
       if (this.timer.state === "idle") this.timer.start(start);
       else this.timer.resume(start);
