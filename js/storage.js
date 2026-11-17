@@ -409,6 +409,61 @@
     return persist();
   }
 
+  function importData(value) {
+    const validNumber = (number) => Number.isFinite(number) && number >= 0;
+    if (!isPlainObject(value) || !validNumber(value.totalFocusMinutes) ||
+        !isPlainObject(value.dailyRecords)) {
+      throw new Error("请选择专注栖所导出的 JSON 数据文件。");
+    }
+    for (const [dateKey, record] of Object.entries(value.dailyRecords)) {
+      if (parseDateKey(dateKey) === null || !isPlainObject(record) ||
+          !validNumber(record.focusMinutes) ||
+          ["note", "deadline"].some((field) =>
+            record[field] !== undefined && typeof record[field] !== "string")) {
+        throw new Error("日历记录格式无效，原有数据未更改。");
+      }
+    }
+    const sessions = value.sessions ?? [];
+    const ids = new Set();
+    if (!Array.isArray(sessions) || sessions.some((item) => {
+      if (!isPlainObject(item) || typeof item.id !== "string" || !item.id ||
+          ids.has(item.id) || !validNumber(item.start) || !validNumber(item.end) ||
+          item.end <= item.start || !Number.isSafeInteger(item.credited) ||
+          item.credited < 0 || item.credited > Math.floor((item.end - item.start) / 60000)) {
+        return true;
+      }
+      ids.add(item.id);
+      return false;
+    })) {
+      throw new Error("专注片段格式无效，原有数据未更改。");
+    }
+    const current = ensureMemoryState();
+    if (current.timer.state === "running" || current.data.sessions.some((item) => item.active)) {
+      throw new Error("请先结束当前专注，再导入数据。");
+    }
+    const next = {
+      version: STATE_VERSION,
+      data: normalizeData({
+        permanentData: { totalFocusMinutes: value.totalFocusMinutes },
+        dailyRecords: value.dailyRecords,
+        // Exported active sessions retain only already credited time.
+        sessions: sessions.map((item) => item.active
+          ? { ...item, active: false, end: item.start + item.credited * 60000 }
+          : { ...item, active: false }),
+      }),
+      timer: createDefaultTimer(),
+    };
+    if (!writeStorage("focus-core.before-import", current)) {
+      throw new Error("无法备份原有数据，请检查浏览器存储空间。");
+    }
+    if (!writeStorage(APP_STATE_KEY, next)) {
+      throw new Error("无法保存导入数据，原有记录未更改。");
+    }
+    memoryState = next;
+    dirty = false;
+    return true;
+  }
+
   function clearData() {
     const state = ensureMemoryState();
     state.data = createDefaultData();
@@ -426,6 +481,7 @@
     updateTimer,
     persist,
     saveData,
+    importData,
     clearData,
     readStorage,
     writeStorage,

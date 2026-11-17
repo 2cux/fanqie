@@ -484,6 +484,14 @@
       showNotice("所有专注数据已清除。");
     };
     addListener(global, "focuscore:datacleared", handleDataCleared);
+    addListener(global, "focuscore:dataimported", () => {
+      timer.snapshot = global.FocusCoreStorage.loadTimer();
+      if (sessions) sessions.message = "";
+      sessionView?.render();
+      syncStatistics();
+      heatmap?.render();
+      syncTimerSchedules(render());
+    });
 
     document.body.dataset.pageVisible = String(!document.hidden);
     creditCompletedMinutes(Date.now(), false);

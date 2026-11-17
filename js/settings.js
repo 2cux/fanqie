@@ -25,6 +25,8 @@
     const confirmDialog = document.querySelector("#clear-confirm-dialog");
     const closeButton = document.querySelector("[data-settings-close]");
     const exportButton = document.querySelector("[data-export-data]");
+    const importButton = document.querySelector("[data-import-data]");
+    const importFile = document.querySelector("[data-import-file]");
     const requestClearButton = document.querySelector("[data-request-clear]");
     const cancelClearButton = document.querySelector("[data-cancel-clear]");
     const confirmClearButton = document.querySelector("[data-confirm-clear]");
@@ -85,6 +87,35 @@
       } catch (error) {
         console.error("导出数据失败", error);
         if (feedback) feedback.textContent = "导出失败，请稍后重试。";
+      }
+    });
+
+    importButton?.addEventListener("click", () => {
+      if (feedback) feedback.textContent = "";
+      importFile.value = "";
+      importFile.click();
+    });
+
+    importFile?.addEventListener("change", async () => {
+      const file = importFile.files?.[0];
+      if (!file) return;
+      importButton.disabled = true;
+      try {
+        const text = await file.text();
+        let data;
+        try {
+          data = JSON.parse(text.replace(/^\uFEFF/, ""));
+        } catch {
+          throw new Error("文件不是有效的 JSON，请选择导出的数据文件。");
+        }
+        global.FocusCoreStorage.importData(data);
+        global.dispatchEvent(new CustomEvent("focuscore:dataimported"));
+        if (feedback) feedback.textContent = "导入成功，日历和统计已更新。";
+      } catch (error) {
+        if (feedback) feedback.textContent = `导入失败：${error.message}`;
+      } finally {
+        importButton.disabled = false;
+        importFile.value = "";
       }
     });
 
