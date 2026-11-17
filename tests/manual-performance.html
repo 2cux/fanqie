@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>专注栖所 · 浏览器性能检测</title>
+<style>
+  body { margin: 0; font: 13px system-ui; background: #f6f5ef; }
+  iframe { display: block; width: 100%; height: 80vh; border: 0; }
+  aside { padding: 12px 20px; border-top: 1px solid #ccc; }
+  pre { white-space: pre-wrap; margin: 8px 0; }
+</style>
+<iframe src="../index.html" title="专注栖所测试页面"></iframe>
+<aside><button id="sample">采样 10 秒</button>
+<span>采样期间保持页面在前台。此检测会增加一个临时帧回调；帧间隔不等同于实际绘制 FPS。</span>
+<pre id="report">等待页面加载</pre></aside>
+<script>
+  const frame = document.querySelector('iframe');
+  const report = document.querySelector('#report');
+  const button = document.querySelector('#sample');
+  frame.addEventListener('load', () => { report.textContent = '已就绪，可分别在闲置、运行和暂停状态采样。'; });
+  button.onclick = () => {
+    const w = frame.contentWindow;
+    const start = w.performance.now();
+    const initialState = w.document.body.dataset.focusState;
+    const gaps = [], longTasks = [];
+    let previous = start, observer;
+    let wasHidden = false;
+    if (w.PerformanceObserver.supportedEntryTypes.includes('longtask')) {
+      observer = new w.PerformanceObserver(list => longTasks.push(...list.getEntries()));
+      observer.observe({type:'longtask'});
+    }
+    button.disabled = true;
+    report.textContent = '采样中，请保持此页在前台……';
+    function tick(now) {
+      wasHidden ||= w.document.hidden;
+      gaps.push(now - previous);
+      previous = now;
+      if (now - start < 10000) { w.requestAnimationFrame(tick); return; }
+      if (observer) { longTasks.push(...observer.takeRecords()); observer.disconnect(); }
+      const sorted = gaps.slice().sort((a,b) => a-b);
+      const nav = w.performance.getEntriesByType('navigation')[0];
+      const resources = w.performance.getEntriesByType('resource');
+      const animations = w.document.getAnimations().filter(a => a.playState === 'running');
+      const result = {
+        initialState, finalState:w.document.body.dataset.focusState,
+        sampleMs:Math.round(now-start), wasHidden,
+        loadMs:Math.round(nav.loadEventEnd), domReadyMs:Math.round(nav.domContentLoadedEventEnd),
+        resourceCount:resources.length,
+        transferredKiB:Math.round((nav.transferSize + resources.reduce((n,r)=>n+r.transferSize,0))/1024),
+        longTasks:longTasks.length,
+        longTaskMs:Math.round(longTasks.reduce((n,t)=>n+t.duration,0)),
+        frameIntervalMedianMs:+sorted[Math.floor(sorted.length*.5)].toFixed(1),
+        frameIntervalP95Ms:+sorted[Math.floor(sorted.length*.95)].toFixed(1),
+        framesOver50Ms:gaps.filter(g=>g>50).length,
+        runningAnimations:animations.map(a=>a.animationName),
+        jsHeapMiB:w.performance.memory ? +(w.performance.memory.usedJSHeapSize/1048576).toFixed(1) : null,
+        viewportWidth:w.innerWidth, contentWidth:w.document.documentElement.scrollWidth
+      };
+      report.textContent = JSON.stringify(result,null,2);
+      button.disabled = false;
+    }
+    w.requestAnimationFrame(tick);
+  };
+</script>
+</html>

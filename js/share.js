@@ -2,7 +2,7 @@
   "use strict";
 
   const SHARE_LIFECYCLE_KEY = "__focusCoreShareLifecycle";
-  const WEEKLY_FOCUS_TARGET_MINUTES = 35 * 60;
+  const WEEKLY_FOCUS_TARGET_MINUTES = 30 * 60;
 
   function toSafeNumber(value, fallback = 0) {
     return Number.isFinite(value) && value >= 0 ? value : fallback;

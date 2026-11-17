@@ -15,6 +15,9 @@
 
   let memoryState = null;
   let dirty = false;
+  let sessionIndexSource = null;
+  let activeSession;
+  let latestSession;
 
   function readStorage(key, fallbackValue) {
     try {
@@ -225,7 +228,8 @@
     return {
       sessions: Array.isArray(source.sessions) ? source.sessions.filter((item) =>
         isPlainObject(item) && typeof item.id === "string" &&
-        Number.isFinite(item.start) && Number.isFinite(item.end) && item.end > item.start &&
+        Number.isFinite(item.start) && Number.isFinite(item.end) &&
+        item.end >= item.start &&
         Number.isFinite(item.credited) && item.credited >= 0
       ).map((item) => ({ ...item })) : [],
       permanentData: {
@@ -320,6 +324,23 @@
   // 读取始终来自内存快照，不会触发 LocalStorage 写入。
   function loadData() {
     return clone(ensureMemoryState().data);
+  }
+
+  // Timer ticks need one record, not a JSON copy of the entire history.
+  // All data mutations replace the sessions array, invalidating this index.
+  function loadSession(activeOnly = false) {
+    const sessions = ensureMemoryState().data.sessions;
+    if (sessions !== sessionIndexSource) {
+      activeSession = undefined;
+      latestSession = undefined;
+      for (const session of sessions) {
+        if (session.active && !activeSession) activeSession = session;
+        if (!latestSession || session.end > latestSession.end) latestSession = session;
+      }
+      sessionIndexSource = sessions;
+    }
+    const session = activeOnly ? activeSession : activeSession || latestSession;
+    return session ? clone(session) : undefined;
   }
 
   function loadTimer() {
@@ -428,8 +449,11 @@
     if (!Array.isArray(sessions) || sessions.some((item) => {
       if (!isPlainObject(item) || typeof item.id !== "string" || !item.id ||
           ids.has(item.id) || !validNumber(item.start) || !validNumber(item.end) ||
-          item.end <= item.start || !Number.isSafeInteger(item.credited) ||
-          item.credited < 0 || item.credited > Math.floor((item.end - item.start) / 60000)) {
+          item.end < item.start || !Number.isSafeInteger(item.credited) ||
+          item.credited < 0 ||
+          (item.offsetSeconds !== undefined && !Number.isFinite(item.offsetSeconds)) ||
+          (item.creditedThrough !== undefined && (!validNumber(item.creditedThrough) || item.creditedThrough < item.start || item.creditedThrough > item.end)) ||
+          item.credited > Math.floor(Math.max(0, (item.end - item.start) / 1000 + (item.offsetSeconds ?? 0)) / 60)) {
         return true;
       }
       ids.add(item.id);
@@ -448,7 +472,9 @@
         dailyRecords: value.dailyRecords,
         // Exported active sessions retain only already credited time.
         sessions: sessions.map((item) => item.active
-          ? { ...item, active: false, end: item.start + item.credited * 60000 }
+          ? { ...item, active: false,
+            creditedThrough: item.creditedThrough ?? item.start + item.credited * 60000,
+            offsetSeconds: item.credited * 60 - (item.end - item.start) / 1000 }
           : { ...item, active: false }),
       }),
       timer: createDefaultTimer(),
@@ -475,6 +501,7 @@
 
   global.FocusCoreStorage = Object.freeze({
     loadData,
+    loadSession,
     loadTimer,
     updateData,
     updateDailyRecord,

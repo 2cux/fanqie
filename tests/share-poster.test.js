@@ -47,7 +47,7 @@ function loadShareModule(elements = {}) {
   return context.FocusCoreShare;
 }
 
-test("weekly remaining time uses the fixed 35-hour target", () => {
+test("weekly remaining time uses the fixed 30-hour target", () => {
   const weeklyRemaining = new FakeElement();
   const weeklyRemainingValue = new FakeElement();
   const share = loadShareModule({
@@ -64,12 +64,12 @@ test("weekly remaining time uses the fixed 35-hour target", () => {
 
   assert.equal(weeklyRemaining.hidden, false);
   assert.equal(weeklyRemaining.getAttribute("aria-hidden"), "false");
-  assert.equal(weeklyRemainingValue.getAttribute("aria-label"), "20 h 48 min");
+  assert.equal(weeklyRemainingValue.getAttribute("aria-label"), "15 h 48 min");
   assert.deepEqual(
     weeklyRemainingValue.children.map((measure) =>
       measure.children.map((part) => part.textContent),
     ),
-    [["20", "h"], ["48", "min"]],
+    [["15", "h"], ["48", "min"]],
   );
 });
 
@@ -81,7 +81,7 @@ test("weekly remaining area is hidden at and above the target", () => {
     "[data-poster-weekly-remaining-value]": weeklyRemainingValue,
   });
 
-  for (const weekFocusMinutes of [35 * 60, 35 * 60 + 1]) {
+  for (const weekFocusMinutes of [30 * 60, 30 * 60 + 1]) {
     share.renderPoster({ weekFocusMinutes });
     assert.equal(weeklyRemaining.hidden, true);
     assert.equal(weeklyRemaining.getAttribute("aria-hidden"), "true");

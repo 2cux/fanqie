@@ -165,6 +165,21 @@ dialog[open] { animation: panel-arrive 260ms cubic-bezier(.2,.7,.2,1) both; }
 @keyframes value-arrive { from { opacity: .3; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes pause-arrive { from { opacity: .6; } to { opacity: 1; } }
 @keyframes panel-arrive { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+/* Keep the morning palette without continuously compositing viewport-sized
+   blurred textures. Only the small running timer ring needs perpetual motion. */
+.ambient-background, .ambient-gradient-layer,
+.ambient-background::before, .ambient-background::after {
+  animation: none;
+  will-change: auto;
+  filter: none;
+  transition: none;
+}
+.ambient-gradient-layer { inset: 0; }
+.focus-atmosphere .focus-atmosphere__aura,
+.focus-atmosphere .focus-atmosphere__flow { display: none; }
+.focus-atmosphere::before { animation: none; }
+.focus-atmosphere::after { animation-play-state: paused; }
+.focus-atmosphere[data-focus-state="running"]::after { animation-play-state: running; }
 @media (max-width: 900px) {
   .focus-stage { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; }
   .stat-card { padding: 20px 16px; }

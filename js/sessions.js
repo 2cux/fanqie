@@ -7,13 +7,20 @@
   };
   const minutes = (start, end) => Math.floor(Math.max(0, end - start) / 60000);
   // Allocate complete minutes by their start date, including sessions spanning midnight.
-  function allocation(start, count) {
+  function allocation(session) {
+    const { start, credited: count } = session;
+    const through = session.creditedThrough ?? session.end;
     const result = {};
     for (let i = 0; i < count; i++) {
-      const date = key(start + i * 60000);
+      // Effective time may exceed wall-clock time. Never assign it to a future day.
+      const date = key(Math.min(start + i * 60000, Math.max(start, through - 1)));
       result[date] = (result[date] || 0) + 1;
     }
     return result;
+  }
+  function effectiveSeconds(session, now) {
+    return Math.max(0, ((session.active ? now : Math.min(now, session.end)) - session.start) / 1000 +
+      (Number.isFinite(session.offsetSeconds) ? session.offsetSeconds : 0));
   }
   class Sessions {
     constructor(timer) {
@@ -26,16 +33,15 @@
         this.message = "上次计时已暂停，未确认的离开时间未补算。可通过补录补上实际专注。";
       }
     }
-    active() { return (storage.loadData().sessions || []).find((s) => s.active); }
+    active() { return storage.loadSession(true); }
     elapsed(now = Date.now()) {
-      const records = storage.loadData().sessions || [];
-      const current = this.active() || records.slice().sort((a, b) => b.end - a.end)[0];
-      return current ? Math.max(0, Math.min(now, current.end) - current.start) / 1000 : 0;
+      const current = storage.loadSession();
+      return current ? effectiveSeconds(current, now) : 0;
     }
     commit(sessions, oldSession, nextSession) {
       const data = storage.loadData();
-      const before = oldSession ? allocation(oldSession.start, oldSession.credited) : {};
-      const after = nextSession ? allocation(nextSession.start, nextSession.credited) : {};
+      const before = oldSession ? allocation(oldSession) : {};
+      const after = nextSession ? allocation(nextSession) : {};
       for (const date of new Set([...Object.keys(before), ...Object.keys(after)])) {
         const record = data.dailyRecords[date] || { focusMinutes: 0 };
         data.dailyRecords[date] = { ...record,
@@ -59,11 +65,12 @@
         throw new Error("这段时间与已有记录重叠，请调整起止时间。");
       }
     }
-    begin(start, duration, now = Date.now()) {
+    begin(start, now = Date.now()) {
       if (this.active()) throw new Error("请先结束当前专注。");
-      const end = start + duration * 60000;
-      if (![25, 45, 60].includes(duration) || end <= now) throw new Error("补记的开始时间须在本段时长以内；已结束的专注请使用补录。");
-      this.validate(start, end, null, now);
+      const end = now;
+      if (!Number.isFinite(start) || start > now || start < now - 364 * 24 * 60 * 60000) {
+        throw new Error("请选择有效的开始时间。");
+      }
       const session = { id: `${now}-${Math.random().toString(36).slice(2)}`, start, end, credited: 0, active: true };
       storage.updateData({ sessions: [...(storage.loadData().sessions || []), session] });
       if (this.timer.state === "idle") this.timer.start(start);
@@ -74,18 +81,18 @@
     sync(now = Date.now(), finish = false) {
       const old = this.active();
       if (!old) return false;
-      const end = Math.min(now, old.end);
-      const ended = finish || now >= old.end;
+      const end = Math.max(old.start, now);
+      const ended = finish;
       if (!ended && (this.timer.snapshot.timerDate !== key(now) || this.timer.state !== "running")) {
         this.timer.snapshot = { state: "running", elapsedSeconds: 0, startedAt: now,
           creditedMinutes: 0, timerDate: key(now) };
         storage.updateTimer(this.timer.snapshot);
       }
-      const next = { ...old, credited: minutes(old.start, end), active: !ended,
-        end: ended ? end : old.end };
+      const next = { ...old, credited: Math.floor(effectiveSeconds(old, end) / 60), active: !ended,
+        creditedThrough: end,
+        end };
       if (ended) {
         this.timer.pause(end);
-        if (!finish) this.message = "本段已到点，已自动暂停。仍在专注可开始下一段；超出的时间可补录。";
       }
       if (next.credited !== old.credited || ended) {
         this.commit(storage.loadData().sessions.map((s) => s.id === old.id ? next : s), old, next);
@@ -103,6 +110,28 @@
       const next = { id: id || `${now}-${Math.random().toString(36).slice(2)}`, start, end,
         credited: minutes(start, end), active: false };
       this.commit(old ? sessions.map((s) => s.id === id ? next : s) : [...sessions, next], old, next);
+      return storage.persist();
+    }
+    adjustElapsed(seconds, expectedId, now = Date.now()) {
+      if (!Number.isInteger(seconds) || seconds < 1 || seconds > 86399) {
+        throw new Error("请选择 1 秒到 23 小时 59 分 59 秒之间的专注时长。");
+      }
+      this.sync(now);
+      const old = storage.loadSession();
+      if ((old?.id ?? null) !== expectedId) throw new Error("当前片段已变化，请关闭后重新调整。");
+      const through = old?.active ? now : old ? Math.min(now, old.end) : now;
+      const start = old?.start ?? now - seconds * 1000;
+      const next = { ...old, id: old?.id ?? `${now}-${Math.random().toString(36).slice(2)}`,
+        start, end: old?.active ? now : old?.end ?? now, active: old?.active ?? false,
+        offsetSeconds: seconds - (through - start) / 1000,
+        creditedThrough: through, credited: Math.floor(seconds / 60) };
+      const records = storage.loadData().sessions;
+      this.commit(old ? records.map((s) => s.id === old.id ? next : s) : [...records, next], old, next);
+      // The timer snapshot tracks effective elapsed time; session timestamps stay unchanged.
+      this.timer.snapshot = { state: next.active ? "running" : "paused", elapsedSeconds: seconds,
+        startedAt: next.active ? now : null, creditedMinutes: next.credited, timerDate: key(now) };
+      storage.updateTimer(this.timer.snapshot);
+      this.message = "已按实际专注时长更新记录。";
       return storage.persist();
     }
     remove(id) {

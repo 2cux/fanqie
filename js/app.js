@@ -4,7 +4,7 @@
   /** 页面协调层：连接计时、统计与视图，不承载数据规则。 */
   const { FocusTimer, TIMER_STATES } = global.FocusCoreTimer;
   const { formatDuration, formatDays } = global.FocusCoreFormatters;
-  const WEEKLY_FOCUS_TARGET_MINUTES = 35 * 60;
+  const WEEKLY_FOCUS_TARGET_MINUTES = 30 * 60;
   const PERSISTENCE_CHECKPOINT_MS = 5 * 60 * 1000;
 
   const STATUS_TEXT = Object.freeze({
@@ -159,7 +159,7 @@
 
       if (weeklyProgress) {
         weeklyProgress.value = Math.max(0, Math.min(WEEKLY_FOCUS_TARGET_MINUTES, weeklyFocusMinutes));
-        weeklyProgress.setAttribute("aria-valuetext", `本周已专注 ${formatDuration(weeklyFocusMinutes)}，目标 35 小时`);
+        weeklyProgress.setAttribute("aria-valuetext", `本周已专注 ${formatDuration(weeklyFocusMinutes)}，目标 30 小时`);
       }
       if (weeklyComplete) weeklyComplete.hidden = !isComplete;
 
@@ -350,8 +350,14 @@
       heatmap?.render();
     }
 
-    function scheduleDailyMaintenance() {
+    function stopDailyMaintenance() {
       window.clearTimeout(dailyMaintenanceId);
+      dailyMaintenanceId = null;
+    }
+
+    function scheduleDailyMaintenance() {
+      stopDailyMaintenance();
+      if (document.hidden || destroyed) return;
       const now = new Date();
       const nextDay = new Date(
         now.getFullYear(),
@@ -360,6 +366,8 @@
       );
 
       dailyMaintenanceId = window.setTimeout(() => {
+        dailyMaintenanceId = null;
+        if (document.hidden || destroyed) return;
         refreshForNewDay();
         scheduleDailyMaintenance();
       }, nextDay.getTime() - now.getTime() + 1000);
@@ -382,6 +390,8 @@
 
     function scheduleMinuteSettlement() {
       stopMinuteSettlements();
+      // Session-based ticks already settle complete minutes.
+      if (sessions) return;
       if (timer.state !== TIMER_STATES.RUNNING || document.hidden) return;
 
       const elapsedMilliseconds = timer.getElapsedSeconds() * 1000;
@@ -404,7 +414,7 @@
       if (sessions) {
         try {
           if (sessions.active()) sessions.sync(Date.now(), true);
-          else sessions.begin(Date.now(), sessionView?.duration() ?? 25);
+          else sessions.begin(Date.now());
           persistState();
           sessionView?.render();
           const elapsed = render();
@@ -446,9 +456,11 @@
         const elapsedSeconds = render();
         motionController?.setState(timer.state, true);
         syncTimerSchedules(elapsedSeconds);
+        scheduleDailyMaintenance();
       } else {
         stopTimerUpdates();
         stopMinuteSettlements();
+        stopDailyMaintenance();
         creditCompletedMinutes(Date.now(), false);
         persistState();
         motionController?.destroy();
@@ -458,8 +470,7 @@
     const flushBeforeClose = () => {
       stopTimerUpdates();
       stopMinuteSettlements();
-      window.clearTimeout(dailyMaintenanceId);
-      dailyMaintenanceId = null;
+      stopDailyMaintenance();
       creditCompletedMinutes(Date.now(), false);
       global.FocusCoreStorage.persist();
       motionController?.destroy();
