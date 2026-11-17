@@ -16,6 +16,7 @@
     <title>专注栖所</title>
     <link rel="stylesheet" href="./css/style.css" />
     <link rel="stylesheet" href="./css/daylight.css" />
+    <link rel="stylesheet" href="./css/sessions.css" />
   </head>
   <body data-focus-state="idle">
     <div class="ambient-background" aria-hidden="true">
@@ -135,6 +136,11 @@
               <span>进入专注</span>
             </button>
             <p class="focus-invitation">从这一刻开始，每一分钟都算数。</p>
+            <div class="session-controls" data-session-controls>
+              <label>每段 <select data-session-duration aria-label="单段时长"><option value="25">25 分钟</option><option value="45">45 分钟</option><option value="60">60 分钟</option></select>，到点自动暂停</label>
+              <button class="secondary-button" type="button" data-session-backdate>已经开始了一会儿</button>
+              <p data-session-hint role="status">准备好时开始；忘记点击也可以补记。</p>
+            </div>
             <div class="weekly-goal">
               <div class="weekly-goal__heading"><span>本周的积累</span><span>目标 35 小时</span></div>
               <progress class="weekly-goal__progress" data-weekly-progress max="2100" value="0" aria-label="本周专注目标进度"></progress>
@@ -176,6 +182,11 @@
           </aside>
         </section>
 
+        <section class="session-section" aria-labelledby="session-title">
+          <div class="section-heading"><div><p class="eyebrow">FOCUS SESSIONS</p><h2 id="session-title">专注片段</h2></div><button class="secondary-button" type="button" data-session-add>补录一段</button></div>
+          <p class="session-help">最近 30 段记录可修正或删除。旧版累计时长保留，不会生成虚构片段。</p>
+          <div data-session-list></div>
+        </section>
         <section class="heatmap-section" aria-labelledby="heatmap-title">
           <div class="section-heading section-heading--compact">
             <div>
@@ -398,16 +409,28 @@
       </div>
     </dialog>
 
-    <script defer src="./js/storage.js"></script>
+    <dialog class="calendar-dialog" data-session-dialog aria-labelledby="session-edit-title">
+      <form class="calendar-dialog__panel" data-session-form>
+        <h2 id="session-edit-title">补录专注</h2>
+        <div data-session-presets class="session-presets"><button type="button" class="secondary-button" data-back-minutes="5">5 分钟前</button><button type="button" class="secondary-button" data-back-minutes="10">10 分钟前</button><button type="button" class="secondary-button" data-back-minutes="15">15 分钟前</button></div>
+        <label class="calendar-dialog__field">开始时间<input type="datetime-local" step="1" data-session-start required></label>
+        <label class="calendar-dialog__field" data-session-end-field>结束时间<input type="datetime-local" step="1" data-session-end required></label>
+        <p data-session-error role="alert"></p>
+        <div class="calendar-dialog__actions"><button type="button" class="secondary-button" data-session-cancel>取消</button><button type="submit" class="primary-button">保存</button></div>
+      </form>
+    </dialog>
+    <script defer src="./js/storage.js?v=sessions-1"></script>
     <script defer src="./js/formatters.js"></script>
     <script defer src="./js/timer.js"></script>
     <script defer src="./js/statistics.js"></script>
+    <script defer src="./js/sessions.js?v=sessions-1"></script>
+    <script defer src="./js/session-ui.js?v=sessions-1"></script>
     <script defer src="./js/focus-motion.js"></script>
     <script defer src="./js/heatmap.js"></script>
-    <script defer src="./js/settings.js"></script>
+    <script defer src="./js/settings.js?v=sessions-1"></script>
     <script defer src="./js/share.js"></script>
     <script defer src="./js/magnetic-button.js"></script>
-    <script defer src="./js/app.js"></script>
+    <script defer src="./js/app.js?v=sessions-1"></script>
   </body>
 </html>
 

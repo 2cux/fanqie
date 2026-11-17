@@ -61,6 +61,8 @@
     document.body.dataset.pageVisible = String(!document.hidden);
 
     const timer = new FocusTimer();
+    const sessions = global.FocusCoreSessions ? new global.FocusCoreSessions.Sessions(timer) : null;
+    let sessionView = null;
     const actionLabel = actionButton.querySelector("span") || actionButton;
     const magnet = global.createFocusMagnet?.(actionButton);
     const motionController = global.FocusCoreMotion
@@ -243,6 +245,16 @@
       now = Date.now(),
       shouldSchedulePersistence = true,
     ) {
+      if (sessions) {
+        const changed = sessions.sync(now);
+        if (changed) {
+          if (shouldSchedulePersistence) schedulePersistenceCheckpoint();
+          heatmap?.render();
+          sessionView?.render();
+          renderState();
+        }
+        return changed;
+      }
       if (!global.FocusCoreStatistics) return;
 
       const uncreditedMinutes = timer.getUncreditedMinutes(now);
@@ -266,7 +278,8 @@
 
     function renderTimer(now = Date.now()) {
       const previousState = timer.state;
-      const elapsedSeconds = timer.getElapsedSeconds(now);
+      if (sessions) creditCompletedMinutes(now);
+      const elapsedSeconds = sessions ? sessions.elapsed(now) : timer.getElapsedSeconds(now);
       const displayText = formatElapsedTime(elapsedSeconds);
       const dateTime = `PT${Math.floor(elapsedSeconds)}S`;
 
@@ -278,7 +291,9 @@
 
     function renderState() {
       const statusText = STATUS_TEXT[timer.state];
-      const actionText = ACTION_TEXT[timer.state];
+      const actionText = sessions
+        ? timer.state === TIMER_STATES.RUNNING ? "结束本段" : "开始一段专注"
+        : ACTION_TEXT[timer.state];
 
       if (status.textContent !== statusText) status.textContent = statusText;
       if (actionLabel.textContent !== actionText) {
@@ -328,6 +343,7 @@
       if (nextDateKey === currentDateKey) return;
 
       currentDateKey = nextDateKey;
+      sessions?.sync();
       timer.resetForNewDay();
       persistState();
       syncStatistics();
@@ -385,6 +401,18 @@
     }
 
     const handleActionClick = () => {
+      if (sessions) {
+        try {
+          if (sessions.active()) sessions.sync(Date.now(), true);
+          else sessions.begin(Date.now(), sessionView?.duration() ?? 25);
+          persistState();
+          sessionView?.render();
+          const elapsed = render();
+          syncTimerSchedules(elapsed);
+          heatmap?.render();
+        } catch (error) { showNotice(error.message, "error"); }
+        return;
+      }
       if (timer.state === TIMER_STATES.IDLE) {
         timer.start();
         persistState();
@@ -402,6 +430,12 @@
       syncTimerSchedules(elapsedSeconds);
     };
     addListener(actionButton, "click", handleActionClick);
+    sessionView = global.FocusCoreSessionUI?.init(sessions, () => {
+      persistState();
+      syncStatistics();
+      heatmap?.render();
+      syncTimerSchedules(render());
+    });
 
     const handleVisibilityChange = () => {
       document.body.dataset.pageVisible = String(!document.hidden);
@@ -436,6 +470,15 @@
     };
     addListener(global, "focuscore:statisticschange", handleStatisticsChange);
     const handleDataCleared = () => {
+      if (sessions) {
+        timer.snapshot = { state: "idle", elapsedSeconds: 0, startedAt: null,
+          creditedMinutes: 0, timerDate: getLocalDateKey() };
+        global.FocusCoreStorage.updateTimer(timer.snapshot);
+        persistState();
+        sessions.message = "";
+        sessionView?.render();
+        syncTimerSchedules(render());
+      }
       syncStatistics();
       heatmap?.render();
       showNotice("所有专注数据已清除。");
@@ -461,6 +504,7 @@
         noticeTimeoutId = null;
         motionController?.destroy();
         heatmap?.destroy();
+        sessionView?.destroy();
         listeners.splice(0).reverse().forEach((removeListener) => {
           removeListener();
         });

@@ -77,6 +77,7 @@
   function createDefaultData() {
     return {
       permanentData: { totalFocusMinutes: 0 },
+      sessions: [],
       dailyRecords: {},
       userState: {
         currentStreak: 0,
@@ -222,6 +223,11 @@
         : null;
 
     return {
+      sessions: Array.isArray(source.sessions) ? source.sessions.filter((item) =>
+        isPlainObject(item) && typeof item.id === "string" &&
+        Number.isFinite(item.start) && Number.isFinite(item.end) && item.end > item.start &&
+        Number.isFinite(item.credited) && item.credited >= 0
+      ).map((item) => ({ ...item })) : [],
       permanentData: {
         totalFocusMinutes: toNonNegativeNumber(
           permanentData.totalFocusMinutes,
@@ -327,6 +333,7 @@
     const state = ensureMemoryState();
     state.data = normalizeData({
       ...state.data,
+      sessions: Array.isArray(partialData.sessions) ? partialData.sessions : state.data.sessions,
       permanentData: {
         ...state.data.permanentData,
         ...(isPlainObject(partialData.permanentData)

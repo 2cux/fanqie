@@ -7,6 +7,7 @@
     return {
       totalFocusMinutes: data.permanentData.totalFocusMinutes,
       dailyRecords: data.dailyRecords,
+      sessions: data.sessions ?? [],
     };
   }
 
