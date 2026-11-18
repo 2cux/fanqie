@@ -5,7 +5,7 @@
   const { FocusTimer, TIMER_STATES } = global.FocusCoreTimer;
   const { formatDuration, formatDays } = global.FocusCoreFormatters;
   const WEEKLY_FOCUS_TARGET_MINUTES = 30 * 60;
-  const PERSISTENCE_CHECKPOINT_MS = 5 * 60 * 1000;
+  const PERSISTENCE_CHECKPOINT_MS = 60 * 1000;
 
   const STATUS_TEXT = Object.freeze({
     [TIMER_STATES.IDLE]: "静候开始",
@@ -346,6 +346,8 @@
       persistState();
       syncStatistics();
       heatmap?.render();
+      sessionView?.render();
+      syncTimerSchedules(render());
     }
 
     function stopDailyMaintenance() {
@@ -469,7 +471,12 @@
       stopTimerUpdates();
       stopMinuteSettlements();
       stopDailyMaintenance();
-      creditCompletedMinutes(Date.now(), false);
+      const now = Date.now();
+      if (sessions) sessions.sync(now, true);
+      else {
+        timer.pause(now);
+        creditCompletedMinutes(now, false);
+      }
       global.FocusCoreStorage.persist();
       motionController?.destroy();
     };

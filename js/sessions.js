@@ -26,6 +26,15 @@
     constructor(timer) {
       this.timer = timer;
       this.message = "";
+      // A restored record is not evidence that the computer stayed on.
+      const interrupted = this.active();
+      if (interrupted) {
+        const stoppedAt = Math.max(interrupted.start, Math.min(Date.now(),
+          interrupted.creditedThrough ?? interrupted.start + interrupted.credited * 60000));
+        this.sync(stoppedAt, true);
+        timer.resetForNewDay();
+        this.message = "上次计时已结束，离线时间未计入。";
+      }
       if (timer.state === "running" && !this.active()) {
         timer.snapshot = { ...timer.snapshot, state: "paused", startedAt: null,
           elapsedSeconds: timer.snapshot.creditedMinutes * 60 };
@@ -41,6 +50,12 @@
     displayElapsed(now = Date.now()) {
       const current = storage.loadSession();
       if (!current) return 0;
+      const midnight = new Date(now);
+      midnight.setHours(0, 0, 0, 0);
+      if (!current.active && current.end <= midnight.getTime()) return 0;
+      if (current.start < midnight.getTime()) {
+        return Math.max(0, ((current.active ? now : current.end) - midnight.getTime()) / 1000);
+      }
       return effectiveSeconds(current, now) +
         (Number.isFinite(current.displayOffsetSeconds) ? Math.max(0, current.displayOffsetSeconds) : 0);
     }

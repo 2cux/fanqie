@@ -95,7 +95,7 @@ test('后台跨午夜：回前台正确分配分钟并继续计时', () => {
   r.advance(15 * 60000);
   assert.equal(r.writes(), writes);
   r.visible(true);
-  assert.equal(r.display.textContent, '00:15:00');
+  assert.equal(r.display.textContent, '00:05:00');
   assert.equal(r.data().dailyRecords['2026-11-22'].focusMinutes, 10);
   assert.equal(r.data().dailyRecords['2026-11-23'].focusMinutes, 5);
   assert.equal(r.stats().weekFocusMinutes, 5);
@@ -117,7 +117,7 @@ test('后台挂三天不执行定时器；返回结算全部经过时间且不�
   assert.equal(r.pending.size, 0);
   assert.equal(r.writes(), writes);
   r.visible(true);
-  assert.equal(r.display.textContent, '72:01:01');
+  assert.equal(r.display.textContent, '23:51:01');
   assert.equal(r.data().dailyRecords['2026-11-22'].focusMinutes, 10);
   assert.equal(r.data().dailyRecords['2026-11-23'].focusMinutes, 1440);
   assert.equal(r.stats().totalFocusMinutes, 4321);
@@ -176,4 +176,48 @@ test('前台每日维护照常跨日并仅安排下一次；后台旧回调不�
   stale();
   assert.equal(r.pending.size, 0);
   assert.equal(r.writes(), writes);
+});
+
+
+test('前台跨零点从零继续，昨天分钟仍保留', () => {
+  const r = runtime(new Date(2026, 10, 17, 23, 58).getTime());
+  r.start();
+  r.advance(120020);
+  assert.equal(r.display.textContent, '00:00:00');
+  assert.equal(r.data().dailyRecords['2026-11-17'].focusMinutes, 2);
+  assert.equal(r.context.FocusCoreStorage.loadTimer().state, 'running');
+  r.advance(60000);
+  assert.equal(r.display.textContent, '00:01:00');
+  assert.equal(r.stats().todayFocusMinutes, 1);
+});
+
+test('暂停跨天自动清零，继续时不带入昨天时长', () => {
+  const r = runtime(new Date(2026, 10, 17, 23, 58).getTime());
+  r.start();
+  r.advance(60000);
+  r.start();
+  r.advance(61000);
+  assert.equal(r.display.textContent, '00:00:00');
+  assert.equal(r.context.FocusCoreStorage.loadTimer().state, 'paused');
+  r.start();
+  r.advance(60020);
+  assert.equal(r.display.textContent, '00:01:00');
+  assert.equal(r.stats().totalFocusMinutes, 2);
+});
+
+test('关闭页面结束并保存，恢复页面不补算关闭时间', () => {
+  const r = runtime(new Date(2026, 10, 17, 10).getTime());
+  r.start();
+  r.advance(95000);
+  r.context.dispatchEvent({ type: 'pagehide' });
+  assert.equal(r.pending.size, 0);
+  assert.equal(r.data().sessions[0].active, false);
+  assert.equal(r.context.FocusCoreStorage.loadTimer().state, 'paused');
+  r.advance(3600000);
+  r.context.dispatchEvent({ type: 'pageshow' });
+  assert.equal(r.display.textContent, '00:01:35');
+  assert.equal(r.stats().totalFocusMinutes, 1);
+  r.start();
+  r.advance(25020);
+  assert.equal(r.display.textContent, '00:02:00');
 });

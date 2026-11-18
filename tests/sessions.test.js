@@ -4,7 +4,7 @@ const path = require("node:path");
 const vm = require("node:vm");
 const test = require("node:test");
 
-test("旧版已保存的截止时间不再限制正在运行的片段", () => {
+test("旧版没有确认时间的运行片段重开后结束，不补算离线时间", () => {
   const r = runtime();
   r.sessions.begin(r.now());
   const data = r.data();
@@ -13,10 +13,8 @@ test("旧版已保存的截止时间不再限制正在运行的片段", () => {
   r.save();
   const restored = runtime(r.values, r.now() + 90 * 60000);
   restored.sessions.sync();
-  assert.equal(restored.sessions.elapsed(), 90 * 60);
-  assert.equal(restored.data().permanentData.totalFocusMinutes, 90);
-  assert.equal(restored.timer.state, "running");
-  restored.sessions.sync(restored.now(), true);
+  assert.equal(restored.sessions.elapsed(), 0);
+  assert.equal(restored.data().permanentData.totalFocusMinutes, 0);
   assert.equal(restored.timer.state, "paused");
 });
 
@@ -34,15 +32,15 @@ test("直接修改运行时长同步统计，不设截止时间，刷新不重�
   assert.equal(r.data().permanentData.totalFocusMinutes, 20);
   const restored = runtime(r.values, r.now() + 60000);
   restored.sessions.sync();
-  assert.equal(restored.data().permanentData.totalFocusMinutes, 21);
+  assert.equal(restored.data().permanentData.totalFocusMinutes, 20);
   restored.sessions.adjustElapsed(5 * 60, old.id);
   assert.equal(restored.data().permanentData.totalFocusMinutes, 5);
   restored.advance(60 * 60000);
   restored.sessions.sync();
-  assert.equal(restored.sessions.elapsed(), 65 * 60);
-  assert.equal(restored.data().permanentData.totalFocusMinutes, 65);
+  assert.equal(restored.sessions.elapsed(), 5 * 60);
+  assert.equal(restored.data().permanentData.totalFocusMinutes, 5);
   assert.equal(restored.data().sessions[0].start, old.start);
-  assert.equal(restored.data().sessions[0].end, restored.now());
+  assert.equal(restored.data().sessions[0].end, r.now());
 });
 
 test("没有片段时直接补记；暂停时修改保留结束时间和暂停状态", () => {
@@ -139,11 +137,12 @@ test("连续显示在刷新和时长修正后保留，下一天新片段重新�
   r.advance(60000);
   r.sessions.begin(r.now());
   r.advance(25000);
+  r.sessions.sync(r.now(), true);
   r.save();
   const restored = runtime(r.values, r.now());
   assert.equal(restored.sessions.displayElapsed(), 120);
   assert.equal(restored.sessions.elapsed(), 25);
-  restored.sessions.adjustElapsed(60, restored.sessions.active().id);
+  restored.sessions.adjustElapsed(60, restored.data().sessions.at(-1).id);
   assert.equal(restored.sessions.displayElapsed(), 155);
   assert.equal(restored.data().permanentData.totalFocusMinutes, 2);
   restored.sessions.sync(restored.now(), true);
@@ -218,14 +217,14 @@ test("后台或休眠数小时后持续计时，重复结算不重复入账", ()
   assert.equal(r.sessions.active(), undefined);
 });
 
-test("补记开始后刷新恢复，补记分钟和后续分钟只计一次", () => {
+test("补记开始后重开保留已保存分钟，不补算离线时间", () => {
   const r = runtime();
   r.sessions.begin(r.now() - 10 * 60000);
   assert.equal(r.data().permanentData.totalFocusMinutes, 10);
   r.save();
   const restored = runtime(r.values, r.now() + 30 * 60000);
   restored.sessions.sync();
-  assert.equal(restored.data().permanentData.totalFocusMinutes, 40);
+  assert.equal(restored.data().permanentData.totalFocusMinutes, 10);
   assert.equal(restored.data().sessions.length, 1);
 });
 
@@ -247,7 +246,7 @@ test("修正、跨日移动和删除片段同步累计、每日与连续天数�
   assert.equal(r.data().dailyRecords["2026-11-16"].note, "旧记录");
 });
 
-test("跨午夜片段正确分配两天，次日刷新仍继续计时", () => {
+test("次日重开结束旧片段并清零显示，历史统计保留", () => {
   const r = runtime(new Map(), new Date(2026, 10, 17, 23, 50).getTime());
   r.sessions.begin(r.now());
   r.advance(5 * 60000);
@@ -255,10 +254,11 @@ test("跨午夜片段正确分配两天，次日刷新仍继续计时", () => {
   r.save();
   const restored = runtime(r.values, new Date(2026, 10, 18, 1).getTime());
   restored.sessions.sync();
-  assert.equal(restored.data().dailyRecords["2026-11-17"].focusMinutes, 10);
-  assert.equal(restored.data().dailyRecords["2026-11-18"].focusMinutes, 60);
-  assert.equal(restored.data().permanentData.totalFocusMinutes, 70);
-  assert.equal(restored.timer.state, "running");
+  assert.equal(restored.data().dailyRecords["2026-11-17"].focusMinutes, 5);
+  assert.equal(restored.data().dailyRecords["2026-11-18"], undefined);
+  assert.equal(restored.sessions.displayElapsed(), 0);
+  assert.equal(restored.data().permanentData.totalFocusMinutes, 5);
+  assert.equal(restored.timer.state, "paused");
 });
 
 test("重叠记录、未来结束和无效时间被拒绝，相邻片段可以补录", () => {

@@ -83,10 +83,11 @@
 
     pause(now = Date.now()) {
       if (this.state !== TIMER_STATES.RUNNING) return false;
+      const elapsedSeconds = this.getElapsedSeconds(now);
       this.snapshot = {
         ...this.snapshot,
         state: TIMER_STATES.PAUSED,
-        elapsedSeconds: this.getElapsedSeconds(now),
+        elapsedSeconds,
         startedAt: null,
       };
       updateTimer(this.snapshot);
