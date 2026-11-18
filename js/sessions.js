@@ -48,16 +48,34 @@
       return current ? effectiveSeconds(current, now) : 0;
     }
     displayElapsed(now = Date.now()) {
-      const current = storage.loadSession();
-      if (!current) return 0;
       const midnight = new Date(now);
       midnight.setHours(0, 0, 0, 0);
-      if (!current.active && current.end <= midnight.getTime()) return 0;
-      if (current.start < midnight.getTime()) {
-        return Math.max(0, ((current.active ? now : current.end) - midnight.getTime()) / 1000);
+      const dayStart = midnight.getTime();
+      const revision = storage.getSessionRevision();
+      // Sum today's actual records, never the legacy cumulative display offset.
+      // Cache finished records so a second tick does not copy the entire history.
+      if (this.displayRevision !== revision || this.displayDay !== dayStart) {
+        this.displayRevision = revision;
+        this.displayDay = dayStart;
+        this.displayFinishedSeconds = 0;
+        this.displayActive = [];
+        for (const session of storage.loadData().sessions) {
+          if (session.active) this.displayActive.push(session);
+          else this.displayFinishedSeconds += this.secondsToday(session, now, dayStart);
+        }
       }
-      return effectiveSeconds(current, now) +
-        (Number.isFinite(current.displayOffsetSeconds) ? Math.max(0, current.displayOffsetSeconds) : 0);
+      return this.displayFinishedSeconds + this.displayActive.reduce(
+        (total, session) => total + this.secondsToday(session, now, dayStart), 0);
+    }
+    secondsToday(session, now, dayStart) {
+      const end = session.active ? now : Math.min(now, session.end);
+      if (end < dayStart || session.start > now) return 0;
+      const seconds = effectiveSeconds(session, now);
+      const effectiveEnd = Math.min(end, session.start + seconds * 1000);
+      const overlap = Math.max(0, effectiveEnd - Math.max(dayStart, session.start)) / 1000;
+      // Manually added time is assigned to the last actual date, as in allocation().
+      const extra = Math.max(0, seconds - Math.max(0, end - session.start) / 1000);
+      return overlap + (key(Math.max(session.start, end - 1)) === key(now) ? extra : 0);
     }
     commit(sessions, oldSession, nextSession) {
       const data = storage.loadData();
@@ -92,12 +110,8 @@
       if (!Number.isFinite(start) || start > now || start < now - 364 * 24 * 60 * 60000) {
         throw new Error("请选择有效的开始时间。");
       }
-      const previous = storage.loadSession();
-      // Carry the displayed time across same-day breaks without crediting it again.
-      const displayOffsetSeconds = previous && key(previous.end) === key(start)
-        ? this.displayElapsed(now) : 0;
       const session = { id: `${now}-${Math.random().toString(36).slice(2)}`, start, end, credited: 0,
-        active: true, displayOffsetSeconds };
+        active: true };
       storage.updateData({ sessions: [...(storage.loadData().sessions || []), session] });
       if (this.timer.state === "idle") this.timer.start(start);
       else this.timer.resume(start);

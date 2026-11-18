@@ -18,6 +18,17 @@
   let sessionIndexSource = null;
   let activeSession;
   let latestSession;
+  let revisionSource = null;
+  let sessionRevision = 0;
+
+  function getSessionRevision() {
+    const sessions = ensureMemoryState().data.sessions;
+    if (revisionSource !== sessions) {
+      revisionSource = sessions;
+      sessionRevision += 1;
+    }
+    return sessionRevision;
+  }
 
   function readStorage(key, fallbackValue) {
     try {
@@ -502,6 +513,7 @@
   global.FocusCoreStorage = Object.freeze({
     loadData,
     loadSession,
+    getSessionRevision,
     loadTimer,
     updateData,
     updateDailyRecord,

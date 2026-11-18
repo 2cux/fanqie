@@ -166,6 +166,7 @@ test("大量历史记录下每秒计时不序列化完整历史，也不写入�
   r.sessions.begin(r.now());
   r.save();
   const persisted = r.values.get("focus-core.state.v4");
+  r.sessions.displayElapsed(); // Warm the daily summary before measuring ticks.
   let largestSerialization = 0;
   r.context.JSON = { parse: JSON.parse, stringify(value) {
     const result = JSON.stringify(value);
@@ -176,6 +177,7 @@ test("大量历史记录下每秒计时不序列化完整历史，也不写入�
     r.advance(1000);
     assert.equal(r.sessions.sync(), false);
     assert.equal(r.sessions.elapsed(), i);
+    r.sessions.displayElapsed();
   }
   assert.ok(largestSerialization < 500, `tick serialized ${largestSerialization} characters`);
   assert.equal(r.values.get("focus-core.state.v4"), persisted);
@@ -293,4 +295,43 @@ test("提前结束只计算完整分钟，下段独立记录且修改运行中�
   r.sessions.sync();
   assert.equal(r.data().permanentData.totalFocusMinutes, 46);
   assert.equal(r.data().sessions.length, 2);
+});
+
+
+test("旧版累计显示偏移不带入今天，今天零时长记录显示零", () => {
+  const r = runtime();
+  const now = r.now();
+  r.context.FocusCoreStorage.updateData({ sessions: [
+    { id: "yesterday", start: now - 86400000 - 29675000,
+      end: now - 86400000, credited: 494, active: false },
+    { id: "today-empty", start: now, end: now, credited: 0,
+      active: false, displayOffsetSeconds: 29675 },
+  ] });
+  assert.equal(r.sessions.displayElapsed(), 0);
+  r.sessions.begin(now);
+  r.advance(95000);
+  r.sessions.sync(r.now(), true);
+  assert.equal(r.sessions.displayElapsed(), 95);
+});
+
+test("当天全部片段相加，补录、删除和修改后立即重新计算", () => {
+  const r = runtime();
+  r.sessions.edit("first", r.now() - 600000, r.now() - 300000);
+  r.sessions.edit("second", r.now() - 120000, r.now());
+  assert.equal(r.sessions.displayElapsed(), 420);
+  r.sessions.remove("first");
+  assert.equal(r.sessions.displayElapsed(), 120);
+  r.sessions.edit("second", r.now() - 60000, r.now());
+  assert.equal(r.sessions.displayElapsed(), 60);
+  r.sessions.edit("yesterday", r.now() - 86400000 - 600000, r.now() - 86400000);
+  assert.equal(r.sessions.displayElapsed(), 60);
+});
+
+test("跨日的手动修正按当天有效时长显示，不恢复历史累计偏移", () => {
+  const r = runtime(new Map(), new Date(2026, 10, 18, 0, 10).getTime());
+  r.sessions.adjustElapsed(1200, null);
+  assert.equal(r.sessions.displayElapsed(), 600);
+  const record = r.data().sessions[0];
+  r.sessions.adjustElapsed(300, record.id);
+  assert.equal(r.sessions.displayElapsed(), 0);
 });
