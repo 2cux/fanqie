@@ -125,7 +125,7 @@
                 role="status"
                 aria-live="polite"
               >静候开始</p>
-              <button type="button" class="timer-edit-trigger" data-timer-edit aria-label="修改已专注时长" aria-haspopup="dialog" aria-controls="timer-edit-dialog">
+              <button type="button" class="timer-edit-trigger" data-timer-edit aria-label="修改今日累计专注时长" aria-haspopup="dialog" aria-controls="timer-edit-dialog">
               <time
                 class="timer__display"
                 data-timer-display
@@ -405,7 +405,7 @@
       <form data-time-editor-form>
         <div class="time-editor-heading"><p class="eyebrow">MAKE TIME YOURS</p><button type="button" class="dialog-close" data-time-editor-cancel aria-label="关闭时间调整">×</button></div>
         <h2 id="time-editor-title">让时间，回到真实</h2>
-        <p class="time-editor-description">调整本段已专注时长，统计和中央累计计时会一起更新；先前片段的时长保留。</p>
+        <p class="time-editor-description">设置今天的累计专注时长，计时器和统计会同步更新。</p>
         <div class="time-wheels" role="group" aria-label="已专注时长">
           <div class="time-wheel-column"><span class="time-wheel-label">小时</span><div class="time-wheel" data-wheel-hours aria-label="已专注小时"></div></div>
           <span class="time-wheel-colon" aria-hidden="true">:</span>
@@ -419,13 +419,13 @@
         <div class="time-editor-actions"><button type="button" class="secondary-button" data-time-editor-cancel>取消</button><button type="submit" class="primary-button">保存时间</button></div>
       </form>
     </dialog>
-    <script defer src="./js/storage.js?v=continuous-1"></script>
+    <script defer src="./js/storage.js?v=daily-edit-1"></script>
     <script defer src="./js/formatters.js"></script>
     <script defer src="./js/timer.js"></script>
     <script defer src="./js/statistics.js"></script>
-    <script defer src="./js/sessions.js?v=continuous-1"></script>
+    <script defer src="./js/sessions.js?v=daily-edit-1"></script>
     <script defer src="./js/wheel-picker.js"></script>
-    <script defer src="./js/timer-editor.js?v=effective-time-1"></script>
+    <script defer src="./js/timer-editor.js?v=daily-edit-1"></script>
     <script defer src="./js/session-ui.js?v=compact-1"></script>
     <script defer src="./js/focus-motion.js"></script>
     <script defer src="./js/heatmap.js"></script>

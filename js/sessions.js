@@ -59,35 +59,55 @@
         this.displayDay = dayStart;
         this.displayFinishedSeconds = 0;
         this.displayActive = [];
-        for (const session of storage.loadData().sessions) {
+        const data = storage.loadData();
+        this.dayAdjustment = data.dailyRecords[key(now)]?.focusAdjustmentSeconds;
+        for (const session of data.sessions) {
           if (session.active) this.displayActive.push(session);
           else this.displayFinishedSeconds += this.secondsToday(session, now, dayStart);
         }
       }
-      return this.displayFinishedSeconds + this.displayActive.reduce(
-        (total, session) => total + this.secondsToday(session, now, dayStart), 0);
+      return Math.max(0, (this.dayAdjustment ?? 0) + this.displayFinishedSeconds + this.displayActive.reduce(
+        (total, session) => total + this.secondsToday(session, now, dayStart), 0));
     }
     secondsToday(session, now, dayStart) {
       const end = session.active ? now : Math.min(now, session.end);
-      if (end < dayStart || session.start > now) return 0;
-      const seconds = effectiveSeconds(session, now);
-      const effectiveEnd = Math.min(end, session.start + seconds * 1000);
+      return this.secondsOnDay(session, end, dayStart, now + 1);
+    }
+    secondsOnDay(session, end, dayStart, until) {
+      if (end < dayStart || session.start >= until) return 0;
+      const seconds = effectiveSeconds(session, end);
+      const effectiveEnd = Math.min(until, end, session.start + seconds * 1000);
       const overlap = Math.max(0, effectiveEnd - Math.max(dayStart, session.start)) / 1000;
-      // Manually added time is assigned to the last actual date, as in allocation().
-      const extra = Math.max(0, seconds - Math.max(0, end - session.start) / 1000);
-      return overlap + (key(Math.max(session.start, end - 1)) === key(now) ? extra : 0);
+      const extra = Math.max(0, seconds - (end - session.start) / 1000);
+      const last = Math.max(session.start, end - 1);
+      return overlap + (last >= dayStart && last < until ? extra : 0);
     }
     commit(sessions, oldSession, nextSession) {
       const data = storage.loadData();
       const before = oldSession ? allocation(oldSession) : {};
       const after = nextSession ? allocation(nextSession) : {};
-      for (const date of new Set([...Object.keys(before), ...Object.keys(after)])) {
-        const record = data.dailyRecords[date] || { focusMinutes: 0 };
-        data.dailyRecords[date] = { ...record,
-          focusMinutes: Math.max(0, record.focusMinutes + (after[date] || 0) - (before[date] || 0)) };
+      let minuteDelta = (nextSession?.credited || 0) - (oldSession?.credited || 0);
+      const dates = new Set([...Object.keys(before), ...Object.keys(after)]);
+      for (const [date, record] of Object.entries(data.dailyRecords)) {
+        if (record.focusAdjustmentSeconds !== undefined && [oldSession, nextSession].some(
+          (session) => session && key(session.start) <= date && key(session.end) >= date)) dates.add(date);
       }
-      data.permanentData.totalFocusMinutes = Math.max(0, data.permanentData.totalFocusMinutes +
-        (nextSession?.credited || 0) - (oldSession?.credited || 0));
+      for (const date of dates) {
+        const record = data.dailyRecords[date] || { focusMinutes: 0 };
+        const delta = (after[date] || 0) - (before[date] || 0);
+        let focusMinutes = Math.max(0, record.focusMinutes + delta);
+        if (record.focusAdjustmentSeconds !== undefined) {
+          const day = new Date(date + "T00:00:00");
+          const start = day.getTime();
+          day.setDate(day.getDate() + 1);
+          const raw = sessions.reduce((sum, session) =>
+            sum + this.secondsOnDay(session, session.end, start, day.getTime()), 0);
+          focusMinutes = record.baseFocusMinutes + Math.floor(Math.max(0, raw + record.focusAdjustmentSeconds) / 60);
+          minuteDelta += focusMinutes - record.focusMinutes - delta;
+        }
+        data.dailyRecords[date] = { ...record, focusMinutes };
+      }
+      data.permanentData.totalFocusMinutes = Math.max(0, data.permanentData.totalFocusMinutes + minuteDelta);
       data.sessions = sessions;
       if (nextSession?.credited > 0) data.userState.lastFocusTimestamp = Date.now();
       storage.updateData(data);
@@ -134,7 +154,10 @@
       if (ended) {
         this.timer.pause(end);
       }
-      if (next.credited !== old.credited || ended) {
+      const displayed = this.displayElapsed(now);
+      const adjustedMinuteChanged = this.dayAdjustment !== undefined &&
+        Math.floor(displayed / 60) !== Math.floor(this.displayElapsed(Math.max(old.end, new Date(now).setHours(0, 0, 0, 0))) / 60);
+      if (next.credited !== old.credited || ended || adjustedMinuteChanged) {
         this.commit(storage.loadData().sessions.map((s) => s.id === old.id ? next : s), old, next);
         if (ended) storage.persist();
         return true;
@@ -150,6 +173,29 @@
       const next = { id: id || `${now}-${Math.random().toString(36).slice(2)}`, start, end,
         credited: minutes(start, end), active: false };
       this.commit(old ? sessions.map((s) => s.id === id ? next : s) : [...sessions, next], old, next);
+      return storage.persist();
+    }
+    adjustToday(seconds, openedAt, expectedId, now = Date.now()) {
+      if (!Number.isSafeInteger(seconds) || seconds < 0) throw new Error("请选择有效的专注时长。");
+      if (key(openedAt) !== key(now) || (storage.loadSession()?.id ?? null) !== expectedId) {
+        throw new Error("日期或专注片段已变化，请重新打开调整。");
+      }
+      this.sync(now);
+      const data = storage.loadData();
+      const date = key(now);
+      const record = data.dailyRecords[date] || { focusMinutes: 0 };
+      const midnight = new Date(now).setHours(0, 0, 0, 0);
+      const raw = data.sessions.reduce((sum, s) => sum + this.secondsToday(s, now, midnight), 0);
+      const baseFocusMinutes = record.baseFocusMinutes ?? Math.max(0, record.focusMinutes -
+        data.sessions.reduce((sum, s) => sum + (s.end >= midnight ? allocation(s)[date] || 0 : 0), 0));
+      const focusMinutes = baseFocusMinutes + Math.floor(seconds / 60);
+      data.dailyRecords[date] = { ...record, baseFocusMinutes, focusMinutes, focusAdjustmentSeconds: seconds - raw };
+      data.permanentData.totalFocusMinutes += focusMinutes - record.focusMinutes;
+      // Checkpoint the running record so a refresh retains the exact edited second.
+      const active = data.sessions.find((s) => s.active);
+      if (active) active.end = active.creditedThrough = now;
+      storage.updateData(data);
+      global.dispatchEvent(new CustomEvent("focuscore:statisticschange", { detail: global.FocusCoreStatistics.getStatistics() }));
       return storage.persist();
     }
     adjustElapsed(seconds, expectedId, now = Date.now()) {

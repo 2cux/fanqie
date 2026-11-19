@@ -335,3 +335,36 @@ test("跨日的手动修正按当天有效时长显示，不恢复历史累计�
   r.sessions.adjustElapsed(300, record.id);
   assert.equal(r.sessions.displayElapsed(), 0);
 });
+
+test("修改今日累计时长可低于先前片段，运行、导入和次日显示正确", () => {
+  const r = runtime();
+  r.sessions.edit("first", r.now() - 600000, r.now());
+  r.sessions.begin(r.now());
+  r.advance(75000);
+  const openedAt = r.now();
+  const id = r.sessions.active().id;
+  assert.equal(r.sessions.displayElapsed(), 675);
+  r.advance(5000);
+  r.sessions.adjustToday(59, openedAt, id);
+  assert.equal(r.sessions.elapsed(), 80);
+  assert.equal(r.sessions.displayElapsed(), 59);
+  assert.equal(r.timer.state, "running");
+  assert.equal(r.data().permanentData.totalFocusMinutes, 0);
+  const data = r.data();
+  const copy = runtime(new Map(), r.now());
+  copy.context.FocusCoreStorage.importData({ ...data, totalFocusMinutes: 0 });
+  assert.equal(copy.sessions.displayElapsed(), 59);
+  r.advance(1000);
+  r.sessions.sync();
+  assert.equal(r.sessions.displayElapsed(), 60);
+  assert.equal(r.data().permanentData.totalFocusMinutes, 1);
+  r.sessions.sync(r.now(), true);
+  r.sessions.adjustToday(0, r.now(), id);
+  assert.equal(r.sessions.displayElapsed(), 0);
+  assert.equal(r.timer.state, "paused");
+  r.advance(86400000);
+  assert.throws(() => r.sessions.adjustToday(300, openedAt, id), /日期/);
+  r.sessions.adjustToday(300, r.now(), id);
+  assert.equal(r.sessions.displayElapsed(), 300);
+  assert.equal(r.data().sessions.length, 2);
+});

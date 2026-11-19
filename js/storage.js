@@ -157,17 +157,17 @@
           (Object.prototype.hasOwnProperty.call(value, "note") ||
             Object.prototype.hasOwnProperty.call(value, "deadline"));
 
-        return [
-          dateKey,
-          hasMetadata
-            ? { focusMinutes, note, deadline }
-            : { focusMinutes },
-        ];
+        const record = hasMetadata ? { focusMinutes, note, deadline } : { focusMinutes };
+        if (Number.isFinite(value?.focusAdjustmentSeconds)) {
+          record.focusAdjustmentSeconds = value.focusAdjustmentSeconds;
+          record.baseFocusMinutes = toNonNegativeNumber(value.baseFocusMinutes);
+        }
+        return [dateKey, record];
       })
       .filter(([dateKey, record]) => {
         const timestamp = parseDateKey(dateKey);
         return (
-          (record.focusMinutes > 0 || record.note || record.deadline) &&
+          (record.focusMinutes > 0 || record.focusAdjustmentSeconds !== undefined || record.note || record.deadline) &&
           timestamp !== null &&
           timestamp >= oldestTimestamp
         );
@@ -393,6 +393,7 @@
     const state = ensureMemoryState();
     const currentRecord = state.data.dailyRecords[dateKey];
     const nextRecord = {
+      ...currentRecord,
       focusMinutes: getRecordFocusMinutes(currentRecord),
       note:
         typeof fields.note === "string"
@@ -407,6 +408,7 @@
 
     if (
       nextRecord.focusMinutes <= 0 &&
+      nextRecord.focusAdjustmentSeconds === undefined &&
       !nextRecord.note &&
       !nextRecord.deadline
     ) {
@@ -450,6 +452,8 @@
     for (const [dateKey, record] of Object.entries(value.dailyRecords)) {
       if (parseDateKey(dateKey) === null || !isPlainObject(record) ||
           !validNumber(record.focusMinutes) ||
+          (record.focusAdjustmentSeconds !== undefined &&
+            (!Number.isFinite(record.focusAdjustmentSeconds) || !validNumber(record.baseFocusMinutes))) ||
           ["note", "deadline"].some((field) =>
             record[field] !== undefined && typeof record[field] !== "string")) {
         throw new Error("日历记录格式无效，原有数据未更改。");
@@ -482,7 +486,8 @@
         permanentData: { totalFocusMinutes: value.totalFocusMinutes },
         dailyRecords: value.dailyRecords,
         // Exported active sessions retain only already credited time.
-        sessions: sessions.map((item) => item.active
+        sessions: sessions.map((item) => item.active && !(item.creditedThrough === item.end &&
+          value.dailyRecords[getLocalDateKey(new Date(item.end))]?.focusAdjustmentSeconds !== undefined)
           ? { ...item, active: false,
             creditedThrough: item.creditedThrough ?? item.start + item.credited * 60000,
             offsetSeconds: item.credited * 60 - (item.end - item.start) / 1000 }
