@@ -10,9 +10,9 @@
   --color-accent-bright: #245b43;
   --color-warm: #bd8745;
   --page-width: 1080px;
-  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 body { background: var(--color-bg); }
+.focus-stage { overflow-x: clip; }
 ::selection { background: #d4e7be; color: #254b40; }
 .ambient-background,
 body[data-focus-state="running"] .ambient-background,
@@ -41,7 +41,7 @@ body[data-focus-state="paused"] .ambient-background {
 .focus-stage { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; min-height: 0; padding-top: 36px; }
 .focus-center { grid-column: 1 / -1; grid-row: 1; padding-bottom: 42px; }
 .core-caption { gap: 12px; margin-bottom: 22px; color: #5b7660; font-size: .84rem; letter-spacing: .1em; }
-.core-caption span:last-child { font: 500 .6rem "Segoe UI", sans-serif; letter-spacing: .18em; }
+.core-caption span:last-child { font-weight: 500; font-size: .6rem; letter-spacing: .18em; }
 .focus-atmosphere {
   width: clamp(300px, 32vw, 368px);
   border: 1px solid #becdaa;
@@ -71,11 +71,11 @@ body[data-focus-state="paused"] .ambient-background {
 .focus-atmosphere[data-focus-state="paused"]::after { filter: none; opacity: .4; animation-play-state: paused; }
 .focus-atmosphere[data-focus-state="paused"] .focus-atmosphere__aura { filter: blur(14px); opacity: .3; }
 .timer { padding: 0 12px; }
-.timer__label { color: #5e7862; font: 500 .84rem "Microsoft YaHei", sans-serif; letter-spacing: .16em; }
+.timer__label { color: #5e7862; font-weight: 500; font-size: .84rem; letter-spacing: .16em; }
 .timer__label::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 9px; vertical-align: 2px; border-radius: 50%; background: #8fa078; }
 body[data-focus-state="running"] .timer__label::before { background: #3f885d; box-shadow: 0 0 0 4px #57986718; animation: status-breathe 2.8s ease-in-out infinite; }
 body[data-focus-state="paused"] .timer__label::before { background: #ad8545; }
-.timer__display { color: #294f40; font-family: "Segoe UI", Arial, sans-serif; font-size: clamp(2.6rem, 4.6vw, 3.6rem); font-weight: 350; letter-spacing: -.035em; margin: 16px 0 0; }
+.timer__display { color: #294f40; font-size: clamp(2.6rem, 4.6vw, 3.6rem); font-weight: 350; letter-spacing: -.035em; margin: 16px 0 0; }
 body[data-focus-state="running"] .timer { animation: value-arrive 450ms ease both; }
 body[data-focus-state="paused"] .timer { animation: pause-arrive 350ms ease both; }
 .primary-button, .share-dialog__actions .primary-button {
@@ -97,7 +97,7 @@ body[data-focus-state="paused"] .timer { animation: pause-arrive 350ms ease both
 .weekly-focus-remaining { height: auto; min-height: 22px; flex-direction: row; gap: 7px; }
 .weekly-focus-remaining.is-hidden { display: none; }
 .weekly-focus-remaining__label { color: #6c7b65; font-family: inherit; font-size: .7rem; letter-spacing: .02em; }
-.weekly-focus-remaining__value { margin: 0; color: #476340; font: 500 .8rem "Segoe UI", sans-serif; text-shadow: none; gap: .35em; }
+.weekly-focus-remaining__value { margin: 0; color: #476340; font-weight: 500; font-size: .8rem; text-shadow: none; gap: .35em; }
 .weekly-focus-remaining__unit { font-size: .8em; color: #65775d; }
 .weekly-goal__complete { margin: 0; font-size: .72rem; text-align: center; color: #386c49; }
 .stats-stack { display: contents; }
@@ -109,7 +109,7 @@ body[data-focus-state="paused"] .timer { animation: pause-arrive 350ms ease both
 .stats-stack--right .stat-card { text-align: left; }
 .stat-card p { color: #5e735f; font-family: inherit; font-size: .8rem; letter-spacing: .04em; margin-bottom: 14px; }
 .stat-card p small { display: block; font-size: .56rem; letter-spacing: .16em; margin-top: 6px; color: #75806d; }
-.stat-card strong { font-family: "Segoe UI", sans-serif; font-weight: 400; font-size: clamp(1.4rem, 2.3vw, 2rem); }
+.stat-card strong { font-weight: 400; font-size: clamp(1.4rem, 2.3vw, 2rem); }
 .stat-card__number { color: #31543f; }
 .stat-card__unit { color: #6e7b65; font-size: .42em; }
 .stat-card__line { display: none; }

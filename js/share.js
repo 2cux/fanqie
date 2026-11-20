@@ -26,7 +26,6 @@
 
     return {
       todayFocusMinutes: toSafeNumber(statistics.todayFocusMinutes),
-      weekFocusMinutes: toSafeNumber(statistics.weekFocusMinutes),
       totalFocusMinutes: toSafeNumber(statistics.totalFocusMinutes),
     };
   }
@@ -58,20 +57,21 @@
 
   function renderPoster(data = readShareData()) {
     renderPosterMeasure("[data-poster-today]", formatPosterDuration(data.todayFocusMinutes));
-    renderPosterMeasure("[data-poster-week]", formatPosterDuration(data.weekFocusMinutes));
     renderPosterMeasure("[data-poster-total]", formatPosterDuration(data.totalFocusMinutes));
 
   }
 
-  // Offline export uses the same three public statistics as the preview.
+  // Offline export uses the same statistics as the preview.
   async function createFallbackPosterCanvas(data) {
     const canvas = document.createElement("canvas");
     canvas.width = 1080;
-    canvas.height = 1920;
+    canvas.height = 1620;
     const context = canvas.getContext("2d");
     if (!context) throw new Error("当前浏览器不支持 Canvas 导出。");
 
     const centerX = canvas.width / 2;
+    const fontFamily = getComputedStyle(document.documentElement).fontFamily;
+    const posterFont = (size) => `400 ${size}px ${fontFamily}`;
     const drawCenteredText = (text, y, font, color) => {
       context.font = font;
       context.fillStyle = color;
@@ -79,7 +79,7 @@
       context.textBaseline = "middle";
       context.fillText(text, centerX, y);
     };
-    const drawMeasure = (text, y, numberFont, unitFont, numberColor, unitColor, xCenter = centerX) => {
+    const drawMeasure = (text, y, numberFont, unitFont, numberColor, unitColor) => {
       const tokens = String(text).trim().split(/\s+/);
       const pairs = [];
       const pairGap = 8;
@@ -99,7 +99,7 @@
         (sum, pair) => sum + pair.numberWidth + pairGap + pair.unitWidth,
         0,
       ) + Math.max(0, pairs.length - 1) * measureGap;
-      let x = xCenter - totalWidth / 2;
+      let x = centerX - totalWidth / 2;
 
       pairs.forEach((pair, index) => {
         context.textAlign = "left";
@@ -116,12 +116,12 @@
       });
     };
     const drawSoftRule = (y) => {
-      const gradient = context.createLinearGradient(180, y, 900, y);
+      const gradient = context.createLinearGradient(260, y, 820, y);
       gradient.addColorStop(0, "rgba(224, 216, 173, 0)");
       gradient.addColorStop(0.5, "rgba(224, 216, 173, 0.2)");
       gradient.addColorStop(1, "rgba(224, 216, 173, 0)");
       context.fillStyle = gradient;
-      context.fillRect(180, y, 720, 1);
+      context.fillRect(260, y, 560, 1);
       context.beginPath();
       context.arc(centerX, y, 2.5, 0, Math.PI * 2);
       context.fillStyle = "#e9e0b9";
@@ -144,12 +144,12 @@
     context.fillStyle = centerWash;
     context.fillRect(130, 240, 820, 770);
 
-    const atmosphere = context.createLinearGradient(0, 1320, 0, 1920);
+    const atmosphere = context.createLinearGradient(0, 1080, 0, canvas.height);
     atmosphere.addColorStop(0, "rgba(8, 34, 23, 0)");
     atmosphere.addColorStop(0.45, "rgba(142, 172, 107, 0.07)");
     atmosphere.addColorStop(1, "rgba(142, 172, 107, 0.15)");
     context.fillStyle = atmosphere;
-    context.fillRect(0, 1320, 1080, 600);
+    context.fillRect(0, 1080, 1080, 540);
 
     context.fillStyle = "rgba(224, 216, 173, 0.17)";
     [[112, 412, 1], [923, 477, 2], [152, 864, 2], [844, 938, 1], [281, 594, 1], [756, 710, 1]].forEach(([x, y, radius]) => {
@@ -168,48 +168,28 @@
       emblem.onerror = () => reject(new Error("分享图案加载失败，请刷新重试。"));
       emblem.src = new URL("assets/share-sanctuary.svg", document.baseURI).href;
     });
-    context.drawImage(emblem, centerX - 154, 106, 308, 233);
-    drawCenteredText("A  Q U I E T  P L A C E", 370, "500 20px Avenir Next, Arial, sans-serif", "#627650");
-    drawCenteredText("专注栖所", 422, "400 56px STSong, Songti SC, serif", "#31543f");
-    drawCenteredText("收拢微光  ·  安住此刻", 475, "400 19px STSong, Songti SC, serif", "#6e7d59");
+    context.drawImage(emblem, centerX - 115, 81, 230, 174);
+    drawCenteredText("A QUIET PLACE", 287, posterFont(35), "#627650");
+    drawCenteredText("专注栖所", 369, posterFont(103), "#31543f");
+    drawCenteredText("收拢微光  ·  安住此刻", 456, posterFont(41), "#6e7d59");
 
-    drawCenteredText("今日专注 / TODAY FOCUS", 635, "500 19px Avenir Next, Arial, sans-serif", "#627650");
-    drawMeasure(formatPosterDuration(data.todayFocusMinutes), 790, "400 144px Georgia, serif", "500 32px Avenir Next, Arial, sans-serif", "#31543f", "#6e7d59");
-    drawCenteredText("把时间，留给真正重要的事", 905, "400 24px STSong, SimSun, serif", "#6e7d59");
-    drawSoftRule(1030);
+    drawCenteredText("今日专注 / TODAY FOCUS", 595, posterFont(41), "#627650");
+    drawMeasure(formatPosterDuration(data.todayFocusMinutes), 785, posterFont(161), posterFont(47), "#31543f", "#6e7d59");
+    drawCenteredText("把时间，留给真正重要的事", 887, posterFont(43), "#6e7d59");
+    drawSoftRule(988);
 
-    const columns = [324, 756];
-    const labels = ["本周专注 / THIS WEEK", "总专注时间 / TOTAL"];
-    const values = [
-      formatPosterDuration(data.weekFocusMinutes),
-      formatPosterDuration(data.totalFocusMinutes),
-    ];
-    columns.forEach((x, index) => {
-      context.textAlign = "center";
-      context.textBaseline = "middle";
-      context.font = "500 22px Avenir Next, Arial, sans-serif";
-      context.fillStyle = "#627650";
-      context.fillText(labels[index], x, 1150);
-      drawMeasure(
-        values[index],
-        1240,
-        "400 58px Georgia, serif",
-        "500 22px Avenir Next, Arial, sans-serif",
-        "#31543f",
-        "#6e7d59",
-        x,
-      );
-    });
+    drawCenteredText("总专注时间 / TOTAL", 1081, posterFont(41), "#627650");
+    drawMeasure(formatPosterDuration(data.totalFocusMinutes), 1230, posterFont(120), posterFont(43), "#31543f", "#6e7d59");
 
-    drawCenteredText("每一刻专注，都算数。", 1560, "400 32px STSong, SimSun, serif", "#31543f");
-    drawCenteredText("D A I L Y   F O C U S   S H A R E", 1740, "500 18px Arial, sans-serif", "#6e7d59");
+    drawCenteredText("每一刻专注，都算数。", 1430, posterFont(49), "#31543f");
+    drawCenteredText("DAILY FOCUS SHARE", 1500, posterFont(35), "#6e7d59");
     context.strokeStyle = "rgba(83, 112, 71, 0.16)";
-    context.strokeRect(43, 77, 994, 1766);
+    context.strokeRect(43, 65, 994, 1490);
 
     context.save();
     context.strokeStyle = "rgba(111, 141, 83, 0.2)";
     context.lineWidth = 1;
-    [1430, 1535, 1654, 1785].forEach((y, index) => {
+    [1230, 1320, 1410, 1510].forEach((y, index) => {
       context.beginPath();
       context.moveTo(-40, y);
       context.quadraticCurveTo(centerX - 230, y - 6 - index * 2, centerX, y);
@@ -338,6 +318,7 @@
       );
 
       try {
+        await document.fonts?.ready;
         const html2canvas = await loadHtml2Canvas();
         await new Promise((resolve) => global.requestAnimationFrame(resolve));
         let canvas;

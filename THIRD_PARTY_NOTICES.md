@@ -1,3 +1,7 @@
+# Jason Handwriting 2
+
+The interface and share images use [Jason Handwriting 2](https://github.com/max32002/JasonHandWritingFonts), based on [Jason's handwritten originals](https://github.com/jasonhandwriting/JasonHandwriting). The bundled interface subset and full webfont are distributed under the [SIL Open Font License 1.1](assets/fonts/JasonHandwriting-OFL.txt).
+
 # Kokonut UI Wheel Picker
 
 The native wheel picker in `js/wheel-picker.js` adapts the drum geometry, pointer handling and motion parameters from [Kokonut UI Wheel Picker](https://kokonutui.com/docs/inputs/wheel-picker), authored by @dorianbaffier. This project uses its existing HTML/CSS/JavaScript runtime instead of React and Motion.
